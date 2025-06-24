@@ -1,0 +1,575 @@
+﻿@page
+@model ConsultaProyeccionesModel
+@{
+    ViewData["Title"] = "Consulta de Proyecciones";
+}
+
+<h2 class="mb-4">@ViewData["Title"]</h2>
+
+<div id="mensajeDinamico" class="mt-2"></div>
+
+<form method="post" class="row g-3 mb-4" id="form-filtros">
+    <div class="col-md-3">
+        <label class="form-label">Fecha Inicio</label>
+        <input type="date" class="form-control" asp-for="Filtro.FechaInicio" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Fecha Fin</label>
+        <input type="date" class="form-control" asp-for="Filtro.FechaFin" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Sucursal (opcional)</label>
+        <input type="text" class="form-control" asp-for="Filtro.CodSucursal" />
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        @* The search button is now moved to the button bar below *@
+    </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-3" id="botonera" style="display:@(Model.Resultados.Any() ? "flex" : "none")">
+    <div class="btn-group">
+        <a asp-page="/Principal" class="btn custom-btn-effect border d-inline-flex align-items-center btn-menu-principal">
+            <i class="bi bi-house-door-fill fs-5 me-1"></i> Menú principal
+        </a>
+        <button type="submit" class="btn btn-primary custom-btn-effect btn-buscar" form="form-filtros">
+            <i class="bi bi-search me-1"></i> Buscar
+        </button>
+        <button id="btnGuardar" class="btn btn-success custom-btn-effect btn-guardar" disabled>
+            <i class="bi bi-save"></i> Guardar
+        </button>
+        <button id="btnLimpiar" class="btn btn-outline-secondary custom-btn-effect btn-limpiar">
+            <i class="bi bi-x-circle"></i> Limpiar
+        </button>
+        <button id="btnRecargar" class="btn btn-outline-primary custom-btn-effect btn-recargar">
+            <i class="bi bi-arrow-clockwise"></i> Recargar
+        </button>
+        <button id="btnExportarExcel" class="btn btn-outline-success custom-btn-effect btn-exportar" disabled>
+            <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+        </button>
+        @{
+            decimal totalMonto = 0;
+            if (Model.Resultados != null)
+            {
+                totalMonto = Model.Resultados.Sum(r => r.Monto);
+            }
+        }
+        <span class="badge bg-info text-dark ms-3 fs-6 py-2 px-3 align-self-center badge-filas">
+            Filas: <span id="filasCount">@(Model.Resultados?.Count ?? 0)</span>
+        </span>
+        <span class="badge bg-success fs-6 py-2 px-3 align-self-center badge-total">
+            Total: USD <span id="montoTotal">@totalMonto.ToString("N2")</span>
+        </span>
+    </div>
+</div>
+
+@if (Model.Resultados != null && Model.Resultados.Any())
+{
+    <div class="table-responsive-scroll">
+        @* AÑADIDO: Contenedor para el scroll *@
+        <table class="table table-bordered table-striped mt-2" id="tablaResultados">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width:5%;">ID</th>
+                    <th style="width:20%;">Fecha Proyección</th>
+                    <th style="width:25%;">Sucursal</th>
+                    <th style="width:25%;">Monto (USD)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Resultados.Count; i++)
+                {
+                    var item = Model.Resultados[i];
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.Fecha.ToString("yyyy-MM-dd")</td>
+                        <td>@item.CodSucursal</td>
+                        <td>
+                            <input type="text" class="form-control input-monto"
+                                   data-index="@i"
+                                   value="@item.Monto.ToString("F2")" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div> @* CIERRE DEL CONTENEDOR *@
+}
+else if (Model.MostrarMensajeSinResultados)
+{
+    <div class="alert alert-info text-center mt-4">
+        No se encontraron resultados para los filtros aplicados.
+    </div>
+}
+
+<div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmSaveModalLabel">Confirmar Guardar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-question-circle-fill text-warning fs-1 mb-3"></i>
+                <p>¿Está seguro que desea aplicar los cambios realizados en los montos?</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-danger custom-btn-effect" data-bs-dismiss="modal" id="btnCancelSaveModal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-success custom-btn-effect" id="btnConfirmSaveModal">
+                    <i class="bi bi-check-circle me-1"></i> Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmClearModal" tabindex="-1" aria-labelledby="confirmClearModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmClearModalLabel">Confirmar Limpiar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3"></i>
+                <p>¿Está seguro que desea limpiar la vista previa?</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-danger custom-btn-effect" data-bs-dismiss="modal" id="btnCancelClearModal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-success custom-btn-effect" id="btnConfirmClearModal">
+                    <i class="bi bi-check-circle me-1"></i> Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Modal para exportar a Excel *@
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportExcelModalLabel">Exportar a Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-file-earmark-excel-fill text-success" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                <p style="font-size: 1.1rem; font-weight: 500;">Ingrese el nombre del archivo:</p>
+                <input type="text" id="fileNameInput" class="form-control mb-3" value="Proyecciones" />
+                <div class="alert alert-warning text-start" role="alert">
+                    El archivo se descargará automáticamente en tu carpeta de descargas.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary custom-modal-btn" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-success custom-modal-btn" id="confirmExportExcel">
+                    <i class="bi bi-download me-1"></i> Exportar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const cambios = {};
+        let cambiosPendientes = false;
+
+        // Get references to the modals and their buttons
+        const confirmSaveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+        const btnConfirmSave = document.getElementById('btnConfirmSaveModal');
+        const btnCancelSave = document.getElementById('btnCancelSaveModal');
+
+        const confirmClearModal = new bootstrap.Modal(document.getElementById('confirmClearModal'));
+        const btnConfirmClear = document.getElementById('btnConfirmClearModal');
+        const btnCancelClear = document.getElementById('btnCancelClearModal');
+
+        // Referencias para el nuevo modal de exportación
+        const exportExcelModal = new bootstrap.Modal(document.getElementById('exportExcelModal'));
+        const btnConfirmExportExcel = document.getElementById('confirmExportExcel');
+
+
+        const mostrarMensaje = (tipo, texto) => {
+            const contenedor = document.getElementById("mensajeDinamico");
+            contenedor.innerHTML = `
+                <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                    ${texto}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>`;
+            setTimeout(() => contenedor.innerHTML = "", 5000);
+        };
+
+        document.querySelectorAll(".input-monto").forEach(input => {
+            input.addEventListener("input", () => {
+                const index = input.dataset.index;
+                const valor = input.value.trim();
+                // Expresión regular para permitir números, punto o coma, y hasta 2 decimales
+                const esValido = /^\d*([.,]\d{0,2})?$/.test(valor);
+
+
+                if (!esValido) {
+                    input.classList.add("is-invalid");
+                    delete cambios[index]; // Eliminar el cambio si el formato es inválido
+                } else {
+                    input.classList.remove("is-invalid");
+                    cambios[index] = valor.replace(",", "."); // Reemplazar coma por punto para consistencia
+                }
+
+                // Verificar si hay algún cambio válido para habilitar/deshabilitar el botón Guardar
+                let hayCambiosValidos = false;
+                document.querySelectorAll(".input-monto").forEach(inp => {
+                    const idx = inp.dataset.index;
+                    if (!inp.classList.contains("is-invalid") && cambios.hasOwnProperty(idx) && inp.value !== inp.dataset.originalValue) {
+                        hayCambiosValidos = true;
+                    }
+                });
+                cambiosPendientes = hayCambiosValidos;
+                document.getElementById("btnGuardar").disabled = !cambiosPendientes;
+
+            });
+        });
+
+        // Event listener para inicializar el valor original de los inputs de monto
+        document.addEventListener("DOMContentLoaded", () => {
+            const tabla = document.getElementById("tablaResultados");
+            const btnExportar = document.getElementById("btnExportarExcel");
+            const btnGuardar = document.getElementById("btnGuardar");
+
+            if (tabla && tabla.querySelectorAll("tbody tr").length > 0) {
+                btnExportar.disabled = false; // Habilita el botón de exportar si hay datos
+                const inputMontos = tabla.querySelectorAll(".input-monto");
+                inputMontos.forEach(input => {
+                    // Guarda el valor original del input al cargar la página
+                    input.dataset.originalValue = input.value;
+                });
+            }
+        });
+
+
+        // Event listener for the "Guardar" button (opens the modal)
+        document.getElementById("btnGuardar")?.addEventListener("click", async function (e) {
+            e.preventDefault();
+            if (!Object.keys(cambios).length || !cambiosPendientes) {
+                mostrarMensaje("warning", "No hay cambios pendientes para guardar.");
+                return;
+            }
+
+            // Validar que todos los campos de monto con cambios sean numéricamente válidos antes de mostrar el modal
+            let allChangesValid = true;
+            for (const index in cambios) {
+                const inputElement = document.querySelector(`.input-monto[data-index="${index}"]`);
+                if (inputElement && inputElement.classList.contains('is-invalid')) {
+                    allChangesValid = false;
+                    break;
+                }
+                // También valida el valor final en el objeto `cambios`
+                if (isNaN(parseFloat(cambios[index]))) {
+                    allChangesValid = false;
+                    break;
+                }
+            }
+
+            if (!allChangesValid) {
+                mostrarMensaje("danger", "Algunos montos tienen un formato inválido. Por favor, corríjalos antes de guardar.");
+                return;
+            }
+
+            confirmSaveModal.show(); // Show the save confirmation modal
+        });
+
+        // Event listener for the "Aceptar" button inside the Save modal
+        btnConfirmSave.addEventListener("click", async function () {
+            confirmSaveModal.hide(); // Hide the modal
+
+            const filas = document.querySelectorAll("#tablaResultados tbody tr");
+            const data = [];
+
+            Object.entries(cambios).forEach(([index, nuevoMonto]) => {
+                const fila = filas[parseInt(index)];
+                const id = parseInt(fila.children[0].innerText);
+                data.push({ id, monto: Number(nuevoMonto) });
+            });
+
+            try {
+                const response = await fetch("/ConsultaProyecciones?handler=Guardar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": document.querySelector("input[name=__RequestVerificationToken]").value
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    mostrarMensaje("success", "Cambios guardados correctamente.");
+                    // Clear the changes object after successful save
+                    for (const key in cambios) {
+                        delete cambios[key];
+                    }
+                    cambiosPendientes = false;
+                    document.getElementById("btnGuardar").disabled = true; // Disable save button after saving
+                    // Actualizar los valores originales de los inputs después de un guardado exitoso
+                    document.querySelectorAll(".input-monto").forEach(input => {
+                        input.dataset.originalValue = input.value;
+                    });
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    const errorText = await response.text(); // Get error message from server
+                    mostrarMensaje("danger", `Ocurrió un error al guardar los cambios: ${errorText}`);
+                }
+            } catch (error) {
+                mostrarMensaje("danger", "Error al comunicarse con el servidor.");
+            }
+        });
+
+        // Event listener for the "Cancelar" button inside the Save modal (optional, but good practice)
+        btnCancelSave.addEventListener("click", function () {
+            confirmSaveModal.hide(); // Just hide the modal, no action
+        });
+
+
+        // Event listener for the "Limpiar" button (opens the modal)
+        document.getElementById("btnLimpiar")?.addEventListener("click", function (e) {
+            e.preventDefault();
+            confirmClearModal.show(); // Show the clear confirmation modal
+        });
+
+        // Event listener for the "Aceptar" button inside the Clear modal
+        btnConfirmClear.addEventListener("click", function () {
+            confirmClearModal.hide(); // Hide the modal
+            location.href = location.pathname; // Proceed with cleaning
+        });
+
+        // Event listener for the "Cancelar" button inside the Clear modal (optional)
+        btnCancelClear.addEventListener("click", function () {
+            confirmClearModal.hide(); // Just hide the modal, no action
+        });
+
+
+        document.getElementById("btnRecargar")?.addEventListener("click", function (e) {
+            e.preventDefault();
+            const fechaInicio = document.querySelector("#Filtro_FechaInicio").value;
+            const fechaFin = document.querySelector("#Filtro_FechaFin").value;
+
+            if (!fechaInicio || !fechaFin) {
+                mostrarMensaje("warning", "Debe ingresar los filtros para recargar los datos.");
+            } else {
+                document.getElementById("form-filtros").submit();
+            }
+        });
+
+        // Event listener para el botón Exportar a Excel (abre el modal)
+        document.getElementById("btnExportarExcel")?.addEventListener("click", function () {
+            const filas = document.querySelectorAll("#tablaResultados tbody tr");
+            if (filas.length === 0) return; // No hacer nada si no hay filas
+
+            exportExcelModal.show(); // Mostrar el modal para el nombre del archivo
+        });
+
+        // Event listener para el botón "Exportar" dentro del modal de Excel
+        btnConfirmExportExcel?.addEventListener("click", function () {
+            const filas = document.querySelectorAll("#tablaResultados tbody tr");
+            // Encabezados excluyendo "ID"
+            const encabezados = ["Fecha", "Sucursal", "Monto"];
+            const data = [encabezados];
+
+            filas.forEach(fila => {
+                const celdas = fila.querySelectorAll("td");
+                const filaData = [
+                    // Excluye celdas[0] que es el ID
+                    celdas[1].innerText, // Fecha Proyección
+                    celdas[2].innerText, // Sucursal
+                    celdas[3].querySelector("input")?.value || "" // Monto
+                ];
+                data.push(filaData);
+            });
+
+            let nombre = document.getElementById("fileNameInput").value;
+            if (!nombre) {
+                // Si el nombre está vacío, usa uno por defecto
+                nombre = "Proyecciones";
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Proyecciones");
+            XLSX.writeFile(wb, `${nombre}.xlsx`);
+
+            // Ocultar el modal después de exportar
+            exportExcelModal.hide();
+        });
+
+
+        // Ocultar mensaje de éxito inicial si existe (del código anterior)
+        setTimeout(() => {
+            const mensaje = document.getElementById("mensajeExito");
+            if (mensaje) mensaje.remove();
+        }, 5000);
+    </script>
+
+    <style>
+        .custom-btn-effect {
+            transition: all 0.3s ease;
+            /* Default text color for all custom effect buttons */
+            color: #212529; /* A dark grey that works well on light backgrounds */
+        }
+
+            .custom-btn-effect:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+        /* AÑADIDO: Estilos para el scroll de la tabla */
+        .table-responsive-scroll {
+            max-height: 500px; /* Puedes ajustar esta altura según tus necesidades */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Para un scroll más suave en dispositivos táctiles */
+        }
+
+            /* Opcional: Para asegurar que el encabezado de la tabla sea visible incluso con el scroll */
+            .table-responsive-scroll thead th {
+                position: sticky;
+                top: 0;
+                background-color: #343a40; /* Color de fondo del thead */
+                color: white;
+                z-index: 10; /* Para que esté por encima del contenido al hacer scroll */
+            }
+
+        /* Styles for modal icons */
+        .modal-body i {
+            font-size: 4rem; /* Adjust icon size as needed */
+            margin-bottom: 1rem;
+        }
+
+        .modal-body p {
+            font-size: 1.1rem; /* Adjust text size as needed */
+            font-weight: 500;
+        }
+
+        /* Estilos para los nuevos widgets de filas y monto total */
+        #botonera .badge {
+            min-width: 120px; /* Ajusta el ancho mínimo si es necesario */
+            text-align: center;
+        }
+
+        /* Custom styles for the buttons - Softer and more elegant */
+        .btn-menu-principal {
+            background-color: #e0e0e0 !important; /* Lighter grey */
+            border-color: #c0c0c0 !important;
+            color: #212529 !important; /* Set a darker, more visible text color */
+            border-top-left-radius: 0.375rem !important; /* Rounded left corners */
+            border-bottom-left-radius: 0.375rem !important; /* Rounded left corners */
+            border-top-right-radius: 0 !important; /* Ensure square right corner */
+            border-bottom-right-radius: 0 !important; /* Ensure square right corner */
+        }
+
+            .btn-menu-principal:hover {
+                background-color: #d0d0d0 !important; /* Slightly darker on hover */
+                border-color: #b0b0b0 !important;
+                color: #212529 !important; /* Keep text dark on hover */
+            }
+
+        .btn-buscar {
+            background-color: #bbdefb !important; /* Soft light blue */
+            border-color: #90caf9 !important;
+            color: #212529 !important; /* Set a darker, more visible text color */
+            border-radius: 0 !important; /* Ensure square corners */
+        }
+
+            .btn-buscar:hover {
+                background-color: #a7d1f5 !important; /* Slightly darker on hover */
+                border-color: #7abff2 !important;
+                color: #212529 !important; /* Keep text dark on hover */
+            }
+
+        .btn-guardar {
+            background-color: #c8e6c9 !important; /* Soft light green */
+            border-color: #a5d6a7 !important;
+            color: #212529 !important; /* Set a darker, more visible text color */
+            border-radius: 0 !important; /* Ensure square corners */
+        }
+
+            .btn-guardar:hover {
+                background-color: #b9d9ba !important; /* Slightly darker on hover */
+                border-color: #95c797 !important;
+                color: #212529 !important; /* Keep text dark on hover */
+            }
+
+        .btn-limpiar {
+            background-color: #ffe082 !important; /* Soft light yellow/orange */
+            border-color: #ffd54f !important;
+            color: #212529 !important; /* Set a darker, more visible text color */
+            border-radius: 0 !important; /* Ensure square corners */
+        }
+
+            .btn-limpiar:hover {
+                background-color: #ffd560 !important; /* Slightly darker on hover */
+                border-color: #ffc930 !important;
+                color: #212529 !important; /* Keep text dark on hover */
+            }
+
+        .btn-recargar {
+            background-color: #bbdefb !important; /* Soft light blue */
+            border-color: #90caf9 !important;
+            color: #212529 !important; /* Set a darker, more visible text color */
+            /* border-top-right-radius: 0.375rem !important; /* Rounded right corners */ */
+            /* border-bottom-right-radius: 0.375rem !important; /* Rounded right corners */ */
+            /* border-top-left-radius: 0 !important; /* Ensure square left corner */ */
+            /* border-bottom-left-radius: 0 !important; /* Ensure square left corner */ */
+        }
+
+            .btn-recargar:hover {
+                background-color: #a7d1f5 !important; /* Slightly darker on hover */
+                border-color: #7abff2 !important;
+                color: #212529 !important; /* Keep text dark on hover */
+            }
+
+        /* Padding for the 'Filas' badge */
+        .badge-filas {
+            margin-left: 20px !important; /* Reduced margin to bring closer */
+            background-color: #b2ebf2 !important; /* A light cyan for contrast */
+            color: #212529 !important; /* Dark text for readability */
+        }
+
+        /* Padding between the 'Filas' and 'Total' badges */
+        .badge-total {
+            margin-left: 10px !important; /* Further reduced margin for closer proximity */
+            background-color: #a5d6a7 !important; /* A soft green, matching 'Guardar' for consistency */
+            color: #212529 !important; /* Dark text for readability */
+        }
+
+        /* Estilos para el botón Exportar a Excel */
+        .btn-exportar {
+            background-color: #d0f0c0 !important;
+            border-color: #b2e2a4 !important;
+            color: #212529 !important;
+            border-top-right-radius: 0.375rem !important; /* Rounded right corners */
+            border-bottom-right-radius: 0.375rem !important; /* Rounded right corners */
+            border-top-left-radius: 0 !important; /* Ensure square left corner */
+            border-bottom-left-radius: 0 !important; /* Ensure square left corner */
+        }
+
+            .btn-exportar:hover {
+                background-color: #b9ddb1 !important;
+                border-color: #a0d294 !important;
+                color: #212529 !important;
+            }
+
+
+        /* Estilos para los botones del modal de exportación */
+        .custom-modal-btn {
+            transition: all 0.3s ease;
+        }
+
+            .custom-modal-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+    </style>
+}

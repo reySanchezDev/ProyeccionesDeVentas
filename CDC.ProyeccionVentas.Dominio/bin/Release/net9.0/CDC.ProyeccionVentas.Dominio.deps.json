@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "CDC.ProyeccionVentas.Dominio/1.0.0": {
+        "runtime": {
+          "CDC.ProyeccionVentas.Dominio.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "CDC.ProyeccionVentas.Dominio/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

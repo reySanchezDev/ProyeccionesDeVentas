@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CDC.ProyeccionVentas.AuthService\CDC.ProyeccionVentas.AuthService.csproj" />
+    <ProjectReference Include="..\CDC.ProyeccionVentas.Dominio\CDC.ProyeccionVentas.Dominio.csproj" />
+    <ProjectReference Include="..\CDC.ProyeccionVentas.Infraestructura\CDC.ProyeccionVentas.Infraestructura.csproj" />
+  </ItemGroup>
+
+</Project>

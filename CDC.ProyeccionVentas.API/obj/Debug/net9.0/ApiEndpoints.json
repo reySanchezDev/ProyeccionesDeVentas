@@ -1,0 +1,143 @@
+[
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/Auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CDC.ProyeccionVentas.API.Models.LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ProyeccionVentasController",
+    "Method": "InsertarProyecciones",
+    "RelativePath": "api/ProyeccionVentas/insertar-masivo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proyecciones",
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.ProyeccionVentaDto, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ProyeccionVentasConsultaController",
+    "Method": "ObtenerFiltrado",
+    "RelativePath": "api/ProyeccionVentasConsulta/filtrar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "filtro",
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.FiltroProyeccionVentas",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.ProyeccionVentasToConsulta, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ProyeccionVentasConsultaController",
+    "Method": "GuardarCambios",
+    "RelativePath": "api/ProyeccionVentasConsulta/guardar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "cambios",
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.ActualizarProyeccionDto, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.StoresController",
+    "Method": "ObtenerStores",
+    "RelativePath": "api/Stores",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.Store, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ValidarFechasController",
+    "Method": "ObtenerExistentes",
+    "RelativePath": "api/ValidarFechas/existentes-mes-actual",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ValidarFechasController",
+    "Method": "FiltrarExistentes",
+    "RelativePath": "api/ValidarFechas/filtrar-existentes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "datosArchivo",
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.ValidarFechaRequest, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.WeatherForecastController",
+    "Method": "Get",
+    "RelativePath": "WeatherForecast",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[CDC.ProyeccionVentas.API.WeatherForecast, CDC.ProyeccionVentas.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ],
+    "EndpointName": "GetWeatherForecast"
+  }
+]

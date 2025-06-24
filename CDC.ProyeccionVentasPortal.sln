@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.ProyeccionVentas.Dominio", "CDC.ProyeccionVentas.Dominio\CDC.ProyeccionVentas.Dominio.csproj", "{E01CE8E6-C8CA-4346-BBD7-558E4E7D4D67}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.ProyeccionVentas.Infraestructura", "CDC.ProyeccionVentas.Infraestructura\CDC.ProyeccionVentas.Infraestructura.csproj", "{A7C6411E-7EF9-4408-A171-97823CF6D84A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.ProyeccionVentas.API", "CDC.ProyeccionVentas.API\CDC.ProyeccionVentas.API.csproj", "{9575F259-FDD1-4192-A931-3595833A70F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.ProyeccionVentas.AuthService", "CDC.ProyeccionVentas.AuthService\CDC.ProyeccionVentas.AuthService.csproj", "{0B4ABCC4-9F6D-486D-9530-214F3200CDFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.ProyeccionVentas.HttpClients", "CDC.ProyeccionVentas.HttpClient\CDC.ProyeccionVentas.HttpClients.csproj", "{43252AFB-918B-4580-A2C4-9A64076C4918}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDC.ProyeccionVentas.FrontEnd", "CDC.ProyeccionVentas.FrontEnd\CDC.ProyeccionVentas.FrontEnd.csproj", "{3729B00C-34A6-4A77-85E4-73D141DDC709}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E01CE8E6-C8CA-4346-BBD7-558E4E7D4D67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E01CE8E6-C8CA-4346-BBD7-558E4E7D4D67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E01CE8E6-C8CA-4346-BBD7-558E4E7D4D67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E01CE8E6-C8CA-4346-BBD7-558E4E7D4D67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7C6411E-7EF9-4408-A171-97823CF6D84A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7C6411E-7EF9-4408-A171-97823CF6D84A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7C6411E-7EF9-4408-A171-97823CF6D84A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7C6411E-7EF9-4408-A171-97823CF6D84A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9575F259-FDD1-4192-A931-3595833A70F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9575F259-FDD1-4192-A931-3595833A70F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9575F259-FDD1-4192-A931-3595833A70F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9575F259-FDD1-4192-A931-3595833A70F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B4ABCC4-9F6D-486D-9530-214F3200CDFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B4ABCC4-9F6D-486D-9530-214F3200CDFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B4ABCC4-9F6D-486D-9530-214F3200CDFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B4ABCC4-9F6D-486D-9530-214F3200CDFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43252AFB-918B-4580-A2C4-9A64076C4918}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43252AFB-918B-4580-A2C4-9A64076C4918}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43252AFB-918B-4580-A2C4-9A64076C4918}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43252AFB-918B-4580-A2C4-9A64076C4918}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3729B00C-34A6-4A77-85E4-73D141DDC709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3729B00C-34A6-4A77-85E4-73D141DDC709}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3729B00C-34A6-4A77-85E4-73D141DDC709}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3729B00C-34A6-4A77-85E4-73D141DDC709}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5F2F68E-EF2C-4C87-BE6C-EAE14D3011F8}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,746 @@
+﻿@page
+@model SubirDatosModel
+@{
+    ViewData["Title"] = "Subir Proyección de Ventas";
+}
+
+<style>
+    /* Estilos personalizados para el input de archivo */
+    .custom-btn-effect {
+        transition: all 0.3s ease;
+    }
+
+        .custom-btn-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+    .input-verde {
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
+    }
+
+    /* Estilos para el diálogo de confirmación personalizado */
+    .custom-confirm-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050; /* Por encima de otros modales si los hay */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+        .custom-confirm-dialog.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+    .custom-confirm-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+        animation: fadeInScale 0.3s ease-out;
+    }
+
+    .custom-confirm-message {
+        margin-bottom: 25px;
+        font-size: 1.1em;
+        color: #333;
+    }
+
+    .custom-confirm-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+        /* Estilos específicos para los botones de Aceptar y Cancelar del diálogo */
+        .custom-confirm-buttons .btn-confirm-cancel {
+            background-color: #dc3545; /* Rojo para cancelar */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+
+            .custom-confirm-buttons .btn-confirm-cancel:hover {
+                background-color: #c82333; /* Rojo más oscuro al pasar el ratón */
+                transform: translateY(-1px);
+            }
+
+        .custom-confirm-buttons .btn-confirm-accept {
+            background-color: #28a745; /* Verde elegante para aceptar */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+
+            .custom-confirm-buttons .btn-confirm-accept:hover {
+                background-color: #218838; /* Verde más oscuro al pasar el ratón */
+                transform: translateY(-1px);
+            }
+
+    /* Otros estilos (de tu código original o Bootstrap si los tienes) */
+    .scroll-tabla-preview {
+        max-height: 500px; /* Altura máxima para la tabla de vista previa */
+        overflow-y: auto; /* Habilita el scroll vertical */
+        border: 1px solid #dee2e6; /* Borde para la tabla */
+    }
+
+    .table th, .table td {
+        white-space: nowrap; /* Evita que el texto se envuelva en las celdas */
+    }
+</style>
+
+<h2>Subir Proyección de Ventas</h2>
+
+<div id="formSubirDatos">
+    <div class="mb-3">
+        <label for="excelInput" class="form-label">Seleccionar archivo Excel:</label>
+        <input type="file" class="form-control custom-btn-effect"
+               id="excelInput" accept=".xlsx,.xls,.xlsm,.csv" />
+    </div>
+    <div class="sticky-top bg-white pt-1" id="stickyBotonera" style="z-index:100;">
+        <div class="d-flex align-items-center gap-2 mb-3" id="botonera">
+            <a asp-page="/Principal" class="btn custom-btn-effect border d-inline-flex align-items-center regresar-btn">
+                <i class="bi bi-house-door-fill fs-5 me-1"></i> Menú principal
+            </a>
+            <button type="button" class="btn custom-btn-effect btn-secondary" id="btnLimpiarTodo">
+                <i class="bi bi-eraser-fill me-1"></i> Limpiar todo
+            </button>
+            <button type="button" class="btn custom-btn-effect btn-primary" id="btnLeerExcel">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Leer archivo
+            </button>
+            <button type="button" class="btn custom-btn-effect btn-danger d-none" id="btnLimpiarDatos">
+                <i class="bi bi-x-circle-fill me-1"></i> Limpiar datos inválidos
+            </button>
+            <button type="button" class="btn custom-btn-effect btn-success d-none" id="btnGuardar">
+                <i class="bi bi-database-check me-1"></i> Guardar en BD
+            </button>
+            <span class="badge bg-secondary ms-2 d-none" id="badgeNumFilas"></span>
+            <span class="badge bg-success ms-1 d-none" id="badgeSumaMonto"></span>
+        </div>
+
+        <div id="mensaje" class="mt-2"></div>
+    </div>
+</div>
+
+<div class="my-3 d-none" id="progressContainer">
+    <div class="progress" style="height: 26px;">
+        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+             role="progressbar" style="width:0%">
+            Procesando...
+        </div>
+    </div>
+    <div class="text-end mt-1 small" id="progressInfo"></div>
+</div>
+
+<hr style="margin-top:8px;" />
+
+<div id="preview" style="display:none;">
+    <h4 class="bg-white pt-2 mb-0 border-bottom shadow-sm" style="z-index:1; position:sticky; top:72px;">
+        Vista previa de datos
+    </h4>
+    <div class="scroll-tabla-preview bg-white">
+        <table class="table table-bordered" id="tablaPreview">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Sucursal</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="customConfirmDialog" class="custom-confirm-dialog">
+    <div class="custom-confirm-content">
+        <p class="custom-confirm-message" id="confirmMessage"></p>
+        <div class="custom-confirm-buttons">
+            <button type="button" class="btn btn-confirm-cancel" id="btnConfirmCancel">
+                <i class="bi bi-x-circle-fill me-1"></i> Cancelar
+            </button>
+            <button type="button" class="btn btn-confirm-accept" id="btnConfirmOk">
+                <i class="bi bi-check-circle-fill me-1"></i> Aceptar
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <script>
+
+        const apiBaseUrl = '@Model.ApiBaseUrl';
+
+        // Variable global para almacenar los datos del Excel
+        let datosExcel = [];
+        // Almacena los detalles de las filas con formato inválido
+        let indicesInvalidos = [];
+
+        // Función para mostrar mensajes de alerta
+        function mostrarMensaje(htmlContent) {
+            document.getElementById('mensaje').innerHTML = htmlContent;
+        }
+
+        // Función para mostrar mensajes de error de formato de Excel
+        function mostrarErrorFormato(msg) {
+            document.getElementById('mensaje').innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error de formato:</strong> ${msg}
+                    <hr>
+                    <b>Formato correcto:</b><br>
+                    - Hoja llamada 'subir'<br>
+                    - 3 columnas: Fecha, Sucursal, Monto
+                </div>`;
+        }
+
+        // Función para limpiar toda la interfaz y datos
+        function limpiarTodo() {
+            datosExcel = []; // Limpia los datos del excel
+            indicesInvalidos = []; // Limpia los detalles de filas inválidas
+            document.getElementById('excelInput').value = ''; // Resetea el input de archivo
+            document.getElementById('excelInput').classList.remove('input-verde'); // Quita el estilo verde
+            document.getElementById('tablaPreview').getElementsByTagName('tbody')[0].innerHTML = ''; // Limpia la tabla de vista previa
+            document.getElementById('preview').style.display = 'none'; // Oculta la vista previa
+            document.getElementById('badgeNumFilas').classList.add('d-none'); // Oculta contador de filas
+            document.getElementById('badgeSumaMonto').classList.add('d-none'); // Oculta contador de suma
+            document.getElementById('btnLimpiarDatos').classList.add('d-none'); // Oculta botón de limpiar datos inválidos
+            document.getElementById('btnGuardar').classList.add('d-none'); // Oculta botón de guardar
+            // No limpiar el div de mensaje aquí para permitir que los errores de carga inicial persistan
+            document.getElementById('progressContainer').classList.add('d-none'); // Oculta barra de progreso
+        }
+
+        // Función para actualizar los contadores y el estado de los botones
+        function actualizarContadoresYBotones() {
+            const numFilas = datosExcel.length;
+            // Suma los montos de los datos actuales en 'datosExcel'
+            const sumaMonto = datosExcel.reduce((sum, row) => sum + (parseFloat(row.Monto) || 0), 0);
+
+            const badgeNumFilas = document.getElementById('badgeNumFilas');
+            badgeNumFilas.textContent = `Filas: ${numFilas}`;
+            badgeNumFilas.classList.remove('d-none');
+
+            const badgeSumaMonto = document.getElementById('badgeSumaMonto');
+            // Formatea el monto como moneda para visualización
+            badgeSumaMonto.textContent = `Total: ${sumaMonto.toLocaleString('es-NI', { style: 'currency', currency: 'NIO' })}`;
+            badgeSumaMonto.classList.remove('d-none');
+
+            // Muestra u oculta los botones de Guardar. El botón de limpiar datos inválidos
+            // ya no se muestra con la nueva lógica de rechazo de archivo completo por formato.
+            if (numFilas > 0) {
+                document.getElementById('btnGuardar').classList.remove('d-none');
+            } else {
+                document.getElementById('btnLimpiarDatos').classList.add('d-none'); // Asegura que esté oculto
+                document.getElementById('btnGuardar').classList.add('d-none');
+            }
+        }
+
+        // Función para validar combinaciones de fecha y sucursal contra la base de datos
+        async function validarCombinacionesFechaSucursal() {
+            // Mapea los datos del Excel al formato esperado por la API
+            const combinaciones = datosExcel.map(d => ({ codSucursal: d.CodSucursal, fecha: d.Fecha }));
+            try {
+                // Realiza la llamada a la API para filtrar combinaciones existentes
+                const response = await fetch(`${apiBaseUrl}/api/ValidarFechas/filtrar-existentes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(combinaciones)
+                });
+
+                if (!response.ok) {
+                    // Si la respuesta no es OK (ej. 500, 400), lanza un error
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                // Parsea la respuesta JSON
+                const coincidencias = await response.json();
+                if (Array.isArray(coincidencias) && coincidencias.length > 0) {
+                    // Si hay coincidencias, limpia todo y muestra una advertencia
+                    limpiarTodo();
+                    mostrarMensaje(`
+                        <div class="alert alert-warning">
+                            <strong>Advertencia:</strong> Ya existen registros en la base de datos con las siguientes combinaciones de sucursal y fecha:<br>
+                            <ul>
+                                ${coincidencias.map(c => `<li>${c.codSucursal} - ${c.fecha}</li>`).join('')}
+                            </ul>
+                            Corrija el archivo para evitar duplicados.
+                        </div>
+                    `);
+                    return false; // Indica que la validación falló
+                }
+
+                return true; // Indica que la validación fue exitosa (incluye cuando no hay coincidencias)
+            } catch (error) {
+                console.error("Error al validar fechas y sucursales:", error);
+                limpiarTodo(); // Limpia la interfaz en caso de error de API
+                mostrarMensaje(`
+                    <div class="alert alert-danger">
+                        <strong>Error de validación:</strong> No se pudo validar las fechas con el servidor de la API. Por favor, revise la conexión, la configuración de CORS en su API o si el endpoint está levantado.
+                        Detalles: ${error.message}
+                    </div>
+                `);
+                return false; // Indica que hubo un error en la validación
+            }
+        }
+
+        // Función principal para validar sucursales y mostrar la vista previa
+        async function validarSucursalesYMostrarPreview() {
+            // Extrae los códigos de sucursal únicos del archivo Excel
+            const sucursalesArchivo = [...new Set(datosExcel.map(r => String(r.CodSucursal).trim().toUpperCase()))];
+            try {
+                // Llama a la API para obtener la lista de sucursales válidas
+                const response = await fetch(`${apiBaseUrl}/api/stores`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const listaStores = await response.json();
+                const sucursalesValidas = listaStores.map(s => String(s.no).trim().toUpperCase()); // Asume que la propiedad es 'no'
+
+                // Encuentra sucursales en el archivo que no existen en la lista válida
+                const sucursalesInvalidas = sucursalesArchivo.filter(s => !sucursalesValidas.includes(s));
+
+                if (sucursalesInvalidas.length > 0) {
+                    // Si hay sucursales inválidas, limpia todo y muestra un mensaje de error
+                    limpiarTodo();
+                    document.getElementById('progressContainer').classList.add('d-none');
+                    mostrarMensaje(`
+                        <div class="alert alert-warning">
+                            <strong>Archivo rechazado:</strong> Se encontraron códigos de sucursales no registrados:<br>
+                            <b>${sucursalesInvalidas.join(', ')}</b><br>
+                            Por favor corrija el archivo y asegúrese que todas las sucursales existen en el sistema.
+                        </div>
+                    `);
+                    return false; // Indica que la validación falló
+                }
+
+                // Si las sucursales son válidas, procede con la validación de fecha-sucursal
+                const validacionFechaSucursal = await validarCombinacionesFechaSucursal();
+                if (!validacionFechaSucursal) {
+                    return false; // Si la validación de fecha-sucursal falla, detén el proceso
+                }
+
+                // Si ambas validaciones pasan, la preview se mostrará desde el `reader.onload`
+                // y los contadores se actualizarán allí. Aquí solo confirmamos el éxito.
+                return true; // Indica que ambas validaciones fueron exitosas
+
+            } catch (error) {
+                console.error("Error al obtener datos de sucursales:", error);
+                limpiarTodo();
+                document.getElementById('progressContainer').classList.add('d-none');
+                mostrarMensaje(`
+                    <div class="alert alert-danger">
+                        <strong>Error de conexión:</strong> No se pudo validar las sucursales con el servidor de la API. Por favor, revise la conexión o intente nuevamente.
+                        Detalles: ${error.message}
+                    </div>
+                `);
+                return false; // Indica que hubo un error
+            }
+        }
+
+        // Función para mostrar el diálogo de confirmación personalizado
+        function customConfirm(message) {
+            return new Promise((resolve) => {
+                const dialog = document.getElementById('customConfirmDialog');
+                const msgElement = document.getElementById('confirmMessage');
+                const btnOk = document.getElementById('btnConfirmOk');
+                const btnCancel = document.getElementById('btnConfirmCancel');
+
+                msgElement.textContent = message;
+                dialog.classList.add('show'); // Añadir clase 'show' para la transición CSS
+
+                const onOkClick = () => {
+                    dialog.classList.remove('show');
+                    btnOk.removeEventListener('click', onOkClick);
+                    btnCancel.removeEventListener('click', onCancelClick);
+                    resolve(true);
+                };
+
+                const onCancelClick = () => {
+                    dialog.classList.remove('show');
+                    btnOk.removeEventListener('click', onOkClick);
+                    btnCancel.removeEventListener('click', onCancelClick);
+                    resolve(false);
+                };
+
+                btnOk.addEventListener('click', onOkClick);
+                btnCancel.addEventListener('click', onCancelClick);
+            });
+        }
+
+        // Función para actualizar la tabla de vista previa con los datos cargados.
+        // Solo se llama si todos los datos son válidos y pasan las validaciones de la API.
+               function actualizarTablaPreview(dataToDisplay) {
+            const tablaPreviewBody = document.querySelector('#tablaPreview tbody');
+            tablaPreviewBody.innerHTML = ''; // Limpiar filas existentes
+
+            dataToDisplay.forEach(rowData => {
+                const row = tablaPreviewBody.insertRow();
+                row.insertCell().textContent = rowData.Fecha;
+                row.insertCell().textContent = rowData.CodSucursal;
+                row.insertCell().textContent =
+                    rowData.Monto != null
+                        ? rowData.Monto.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '';
+            });
+        }
+
+
+        // --- LÓGICA PRINCIPAL AL CARGAR EL DOCUMENTO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const excelInput = document.getElementById('excelInput');
+            const btnLeerExcel = document.getElementById('btnLeerExcel');
+            const progressBar = document.getElementById('progressBar');
+            const progressInfo = document.getElementById('progressInfo');
+            const progressContainer = document.getElementById('progressContainer');
+            const btnLimpiarDatos = document.getElementById('btnLimpiarDatos');
+
+            // Event listener para el estilo del input de archivo cuando se selecciona un archivo
+            excelInput.addEventListener('change', function () {
+                const fileInput = this;
+                if (fileInput.files.length) {
+                    fileInput.classList.add('input-verde');
+                    mostrarMensaje(''); // Limpia el mensaje al seleccionar un nuevo archivo
+                } else {
+                    fileInput.classList.remove('input-verde');
+                    mostrarMensaje(''); // Limpia el mensaje si no hay archivo
+                }
+            });
+
+            // Event listener para el botón "Leer archivo"
+            btnLeerExcel.addEventListener('click', () => {
+                const file = excelInput.files[0]; // Obtiene el primer archivo seleccionado
+                if (!file) {
+                    mostrarMensaje('<div class="alert alert-info">Por favor, seleccione un archivo Excel primero.</div>');
+                    return;
+                }
+
+                limpiarTodo(); // Limpia cualquier estado previo, excepto el mensaje actual
+                mostrarMensaje(''); // Asegura que cualquier mensaje anterior se borre antes de la lectura
+                progressContainer.classList.remove('d-none'); // Muestra la barra de progreso
+                progressBar.style.width = '0%';
+                progressInfo.textContent = 'Iniciando lectura...';
+
+                const reader = new FileReader();
+
+                // Evento al iniciar la lectura
+                reader.onloadstart = () => {
+                    progressBar.style.width = '10%';
+                    progressInfo.textContent = 'Leyendo archivo...';
+                };
+
+                // Evento durante el progreso de la lectura
+                reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        // Calcula el porcentaje cargado, dejando un margen para el procesamiento final
+                        const percentLoaded = Math.round((e.loaded / e.total) * 90);
+                        progressBar.style.width = `${percentLoaded}%`;
+                        progressInfo.textContent = `Leyendo: ${percentLoaded}%`;
+                    }
+                };
+
+                // Evento cuando la lectura del archivo se completa
+                reader.onload = async (e) => {
+                    progressBar.style.width = '100%';
+                    progressInfo.textContent = 'Procesando datos...';
+                    const data = new Uint8Array(e.target.result); // Obtiene los datos del archivo
+                    const workbook = XLSX.read(data, { type: 'array' }); // Parsea el archivo Excel
+
+                    const sheetName = "subir"; // Nombre exacto de la pestaña con tus datos
+                    const worksheet = workbook.Sheets[sheetName];
+
+                    if (!worksheet) {
+                        limpiarTodo(); // Limpia la interfaz
+                        mostrarErrorFormato(`No se encontró la pestaña "${sheetName}" en el archivo Excel. Asegúrese de que el nombre sea correcto y esté en el archivo.`);
+                        progressContainer.classList.add('d-none');
+                        return;
+                    }
+
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (jsonData.length === 0) {
+                        limpiarTodo(); // Limpia la interfaz
+                        mostrarMensaje('<div class="alert alert-warning">El archivo Excel está vacío o no contiene datos válidos en la hoja "subir" después del procesamiento.</div>');
+                        progressContainer.classList.add('d-none');
+                        return;
+                    }
+
+                    // Asume que la primera fila de jsonData es el encabezado
+                    const headers = jsonData[0].map(h => String(h).trim()); // Normaliza los encabezados
+
+                    // Validar que los encabezados esperados estén presentes
+                    const requiredHeaders = ["Fecha", "Sucursal", "Monto"];
+                    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+
+                    if (missingHeaders.length > 0) {
+                        limpiarTodo(); // Limpia la interfaz
+                        mostrarErrorFormato(`Faltan las siguientes columnas requeridas: ${missingHeaders.join(', ')}. El archivo no puede ser procesado.`);
+                        progressContainer.classList.add('d-none');
+                        return;
+                    }
+
+                    // Array temporal para recopilar todas las filas y verificar su formato
+                    let tempDatosExcel = [];
+                    indicesInvalidos = []; // Resetear índices inválidos para cada nueva lectura
+
+                    // Procesa cada fila de datos (después del encabezado)
+                    jsonData.slice(1).forEach((row, indexOriginal) => {
+                        let obj = {};
+                        let rowIsValid = true; // Bandera para esta fila
+                        let currentRowErrors = []; // Almacenará los detalles del error para esta fila
+
+                        headers.forEach((header, index) => {
+                            let value = row[index]; // Valor de la celda
+                            switch (String(header).trim()) {
+                                case "Fecha":
+                                    if (typeof value === 'number') {
+                                        const excelDate = new Date(Date.UTC(1899, 11, 30));
+                                        excelDate.setDate(excelDate.getDate() + value);
+                                        obj[header] = excelDate.toISOString().split('T')[0];
+                                    } else if (typeof value === 'string') {
+                                        try {
+                                            const date = new Date(value);
+                                            if (!isNaN(date.getTime())) {
+                                                obj[header] = date.toISOString().split('T')[0];
+                                            } else {
+                                                obj[header] = null;
+                                                rowIsValid = false;
+                                                currentRowErrors.push('Fecha inválida');
+                                            }
+                                        } catch (e) {
+                                            obj[header] = null;
+                                            rowIsValid = false;
+                                            currentRowErrors.push('Fecha inválida');
+                                        }
+                                    } else {
+                                        obj[header] = null;
+                                        rowIsValid = false;
+                                        currentRowErrors.push('Fecha faltante o tipo incorrecto');
+                                    }
+                                    break;
+                                    case "Monto":
+        obj[header] = parseFloat(value);
+        if (isNaN(obj[header])) {
+            obj[header] = null;
+            rowIsValid = false;
+            currentRowErrors.push('Monto inválido');
+        } else if (obj[header] < 0) {
+            rowIsValid = false;
+            currentRowErrors.push('Monto negativo no permitido');
+        }
+        break;
+
+                                case "Sucursal":
+                                    obj["CodSucursal"] = String(value).trim();
+                                    if (!obj["CodSucursal"]) {
+                                        rowIsValid = false;
+                                        currentRowErrors.push('Sucursal inválida o faltante');
+                                    }
+                                    break;
+                                default:
+                                    obj[header] = value;
+                            }
+                        });
+
+                        if (!rowIsValid) {
+                            // Guarda el número de fila real en Excel (1-based, +1 por encabezado, +1 por índice 0-based)
+                            // y los detalles del error para esta fila
+                            indicesInvalidos.push({ rowNumber: indexOriginal + 2, errors: currentRowErrors });
+                        }
+                        tempDatosExcel.push({ ...obj, _originalIndex: indexOriginal, _isValid: rowIsValid });
+                    });
+
+                    // Si se encontraron datos con formato inválido, rechazar el archivo completamente.
+                    if (indicesInvalidos.length > 0) {
+                        let errorMessages = indicesInvalidos.map(item => {
+                            return `<li>Fila ${item.rowNumber}: ${item.errors.join(', ')}</li>`;
+                        }).join('');
+
+                        limpiarTodo(); // Limpia la interfaz antes de mostrar el mensaje final
+                        mostrarMensaje(`
+                            <div class="alert alert-danger">
+                                <strong>Archivo rechazado debido a formato incorrecto:</strong> Se encontraron datos inválidos en las siguientes filas:<br>
+                                <ul>${errorMessages}</ul>
+                                Por favor, corrija el archivo antes de intentar subirlo nuevamente.
+                            </div>
+                        `);
+                        document.getElementById('progressContainer').classList.add('d-none');
+                        return; // Detiene el procesamiento posterior y previene la vista previa
+                    }
+
+                    // Si todas las filas son válidas en formato, entonces se asignan a datosExcel
+                    datosExcel = tempDatosExcel;
+
+                    if (datosExcel.length === 0) {
+                        limpiarTodo(); // Limpia la interfaz
+                        mostrarMensaje('<div class="alert alert-warning">No se encontraron datos válidos en el archivo después del procesamiento. Verifique los encabezados (Fecha, Sucursal, Monto) y el formato de los datos.</div>');
+                        document.getElementById('progressContainer').classList.add('d-none');
+                        return;
+                    }
+
+                    // Ahora, procede con las validaciones de la API (sucursales y fecha-sucursal)
+                    // Estas funciones también llamarán a limpiarTodo() si fallan y mostrarán sus propios mensajes.
+                    const isValid = await validarSucursalesYMostrarPreview();
+
+                    if (isValid) {
+                        mostrarMensaje('<div class="alert alert-success">Archivo leído y validado con éxito.</div>');
+                        actualizarTablaPreview(datosExcel); // Solo muestra la vista previa si todo es válido
+                        document.getElementById('preview').style.display = 'block'; // <--- HACE VISIBLE LA VISTA PREVIA
+                        actualizarContadoresYBotones(); // Actualiza contadores y botones después de la validación exitosa
+                    } else {
+                        // El mensaje de error ya se muestra dentro de las funciones de validación (si fallan)
+                        // y limpiarTodo() ya se llama dentro de la validación si falla.
+                    }
+
+                    document.getElementById('progressContainer').classList.add('d-none'); // Oculta la barra de progreso al finalizar
+                };
+
+                // Evento si ocurre un error durante la lectura del archivo
+                reader.onerror = (error) => {
+                    console.error("Error al leer el archivo:", error);
+                    limpiarTodo(); // Limpia la interfaz
+                    mostrarMensaje('<div class="alert alert-danger">Error al leer el archivo. Por favor, intente de nuevo.</div>');
+                    document.getElementById('progressContainer').classList.add('d-none');
+                };
+
+                // Inicia la lectura del archivo como un ArrayBuffer
+                reader.readAsArrayBuffer(file);
+            });
+
+            // Event listener para el botón "Limpiar todo"
+            document.getElementById('btnLimpiarTodo').addEventListener('click', async () => {
+                const previewTableBody = document.querySelector('#tablaPreview tbody');
+                // Si no hay datos en la tabla de vista previa y no hay archivo seleccionado, no hay nada que limpiar
+                if (previewTableBody.rows.length === 0 && excelInput.files.length === 0) {
+                    mostrarMensaje('<div class="alert alert-info">No hay nada que limpiar.</div>');
+                    return;
+                }
+
+                // Pide confirmación al usuario antes de limpiar todo
+                const confirmed = await customConfirm('¿Está seguro que desea limpiar todo el formulario y los datos cargados?');
+                if (confirmed) {
+                    limpiarTodo();
+                    mostrarMensaje('<div class="alert alert-info">Formulario y datos limpiados.</div>');
+                }
+            });
+
+            // Lógica para el botón "Limpiar datos inválidos"
+            // Con la lógica actual de rechazar el archivo completo si hay formatos inválidos,
+            // este botón ya no tendrá una función activa para "limpiar datos inválidos" del formato
+            // que impidan la carga inicial. Se mantiene por si se desea implementar una validación
+            // "suave" o de otro tipo en el futuro donde los datos inválidos se muestran pero se pueden limpiar.
+            btnLimpiarDatos.addEventListener('click', () => {
+                // Actualmente, si hay índices inválidos (lo que significa que el archivo fue rechazado por formato),
+                // este bloque de código no se alcanzará porque `limpiarTodo()` se llama antes.
+                // Si esta funcionalidad debe ser usada para otro tipo de validación (no de formato inicial),
+                // esta lógica sería apropiada.
+                if (indicesInvalidos.length > 0) {
+                    // Aquí se filtraría `datosExcel` para quedarse solo con los válidos
+                    datosExcel = datosExcel.filter(row => row._isValid);
+                    indicesInvalidos = []; // Resetear indicesInvalidos ya que se han eliminado
+                    actualizarTablaPreview(datosExcel); // Volver a dibujar la tabla con solo los datos válidos
+                    mostrarMensaje('<div class="alert alert-success">Datos inválidos eliminados de la vista previa.</div>');
+                    actualizarContadoresYBotones();
+                } else {
+                    mostrarMensaje('<div class="alert alert-info">No hay datos inválidos que limpiar en la vista actual.</div>');
+                }
+            });
+
+            // Event listener para el botón "Guardar en BD"
+            document.getElementById('btnGuardar').addEventListener('click', async () => {
+                if (datosExcel.length === 0) {
+                    mostrarMensaje('<div class="alert alert-warning">No hay datos para guardar. Cargue un archivo primero.</div>');
+                    return;
+                }
+
+                // Pide confirmación al usuario antes de guardar
+                const confirmed = await customConfirm('¿Está seguro que desea guardar los datos en la base de datos?');
+                if (!confirmed) {
+                    return; // Si el usuario cancela, no hace nada
+                }
+
+                progressContainer.classList.remove('d-none');
+                progressBar.style.width = '0%';
+                progressInfo.textContent = 'Iniciando guardado...';
+
+                try {
+                    // Realiza la llamada a la API para guardar los datos
+                    const response = await fetch(`${apiBaseUrl}/api/ProyeccionVentas/insertar-masivo`, { // Asegúrate de que esta URL sea la correcta para tu API
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Incluye el token de antifalsificación si usas ASP.NET Core para seguridad
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                        },
+                        // Envía solo los datos necesarios a la API
+                        body: JSON.stringify(datosExcel.map(d => ({
+                            fecha: d.Fecha,
+                            codSucursal: d.CodSucursal,
+                            monto: d.Monto
+                        })))
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        mostrarMensaje(`
+                            <div class="alert alert-success">
+                                Datos guardados exitosamente. ${result.message || ''}
+                            </div>
+                        `);
+                        limpiarTodo(); // Limpiar el formulario y los datos después de guardar con éxito
+                    } else {
+                        // Si la respuesta no es exitosa, intenta leer el mensaje de error de la API
+                        const errorData = await response.json();
+                        mostrarMensaje(`
+                            <div class="alert alert-danger">
+                                <strong>Error al guardar datos:</strong> ${errorData.message || 'Error desconocido al guardar.'}
+                            </div>
+                        `);
+                    }
+                } catch (error) {
+                    console.error("Error al guardar en BD:", error);
+                    mostrarMensaje(`
+                        <div class="alert alert-danger">
+                            <strong>Error de conexión o de red:</strong> No se pudo conectar con el servidor para guardar los datos.
+                            Detalles: ${error.message}
+                        </div>
+                    `);
+                } finally {
+                    progressContainer.classList.add('d-none'); // Oculta la barra de progreso al finalizar
+                }
+            });
+        });
+    </script>
+}
+
+
+@* //ultima version mejroada y exitosa 1 *@

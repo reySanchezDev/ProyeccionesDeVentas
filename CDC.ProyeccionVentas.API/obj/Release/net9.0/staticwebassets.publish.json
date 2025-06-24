@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "415nUQprBzyrgpE591s7yPoJNN9yDnH/ik6V/1zKpgo=",
+  "Source": "CDC.ProyeccionVentas.API",
+  "BasePath": "_content/CDC.ProyeccionVentas.API",
+  "Mode": "Default",
+  "ManifestType": "Publish",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

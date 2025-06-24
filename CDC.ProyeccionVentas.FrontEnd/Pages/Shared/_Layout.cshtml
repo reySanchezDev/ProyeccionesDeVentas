@@ -1,0 +1,280 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Authentication
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CDC.ProyeccionVentas.FrontEnd</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/CDC.ProyeccionVentas.FrontEnd.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <style>
+        /* Definición de variables CSS para los colores del logo */
+        :root {
+            --color-cafe-oscuro: #6f4e37; /* Similar al cafe del logo */
+            --color-verde-hoja: #72a65d; /* Similar al verde del logo */
+            --color-sidebar-bg: #2b3035; /* Un tono oscuro que contrasta bien */
+            --color-link-hover: #007bff; /* Azul Bootstrap para interacción, puedes cambiarlo */
+            --color-logo-text: #e0e0e0; /* Un gris claro para el texto del logo en sidebar */
+        }
+
+        /* Estilos generales para el layout */
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente un poco más moderna */
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh; /* Ocupa el 100% de la altura de la ventana */
+            background-color: #f8f9fa; /* Fondo ligero para el resto de la app */
+        }
+
+        /* Estilos del Sidebar (más elegante y ancho ajustado) */
+        .sidebar-cdc {
+            /* width: 220px; Eliminamos el ancho fijo */
+            min-width: 200px; /* Ancho mínimo para que no se vea demasiado estrecho */
+            width: fit-content; /* Se ajusta al contenido más largo */
+            background: linear-gradient(180deg, var(--color-sidebar-bg) 0%, #1f2327 100%); /* Degradado sutil */
+            color: #fff;
+            padding-top: 50px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.2); /* Sombra más pronunciada */
+            flex-shrink: 0;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.05); /* Separador sutil */
+        }
+
+            .sidebar-cdc .logo-cdc {
+                font-size: 1.8rem; /* Un poco más grande */
+                font-weight: 700;
+                color: var(--color-logo-text); /* Color definido en variable */
+                text-align: center;
+                margin-bottom: 45px; /* Más espacio */
+                letter-spacing: 1.5px;
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.3); /* Sombra de texto para pop */
+            }
+
+            .sidebar-cdc .nav-link {
+                color: rgba(255,255,255,0.85); /* Texto ligeramente translúcido */
+                font-size: 1.05rem; /* Ajuste de tamaño */
+                border-radius: 6px; /* Bordes ligeramente redondeados */
+                transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease; /* Transiciones más suaves */
+                margin: 0 15px 12px 15px; /* Márgenes para separar y dar espacio a los bordes */
+                padding: 15px 20px; /* Más padding para que los enlaces sean más grandes */
+                display: flex;
+                align-items: center;
+                position: relative; /* Para el efecto de underline animado */
+                overflow: hidden; /* Oculta el overflow del pseudo-elemento */
+            }
+
+                .sidebar-cdc .nav-link::before { /* Efecto de subrayado/resplandor */
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 3px; /* Grosor del "subrayado" */
+                    background: linear-gradient(90deg, var(--color-verde-hoja), var(--color-cafe-oscuro)); /* Degradado en el hover */
+                    transform: scaleX(0); /* Inicialmente oculto */
+                    transform-origin: bottom right;
+                    transition: transform 0.3s ease-out;
+                }
+
+                .sidebar-cdc .nav-link:hover::before {
+                    transform: scaleX(1); /* Se expande en hover */
+                    transform-origin: bottom left;
+                }
+
+                .sidebar-cdc .nav-link:hover,
+                .sidebar-cdc .nav-link:focus {
+                    background: rgba(0,0,0,0.2); /* Fondo más oscuro en hover */
+                    color: #fff; /* Texto blanco puro en hover */
+                    transform: translateY(-2px); /* Ligero levantamiento */
+                    box-shadow: 0 5px 20px rgba(0,0,0,0.3); /* Sombra más definida */
+                    text-decoration: none;
+                }
+
+                .sidebar-cdc .nav-link .bi {
+                    font-size: 1.6rem; /* Íconos un poco más grandes */
+                    margin-right: 18px; /* Más espacio */
+                    transition: transform 0.2s ease, color 0.2s ease;
+                    color: var(--color-verde-hoja); /* Color de icono inicial */
+                }
+
+                .sidebar-cdc .nav-link:hover .bi {
+                    transform: scale(1.15) rotate(-5deg); /* Efecto más suave */
+                    color: var(--color-cafe-oscuro); /* Cambia color de icono en hover */
+                }
+
+        /* Contenedor del contenido principal (Navbar, Body, Footer) */
+        .main-content-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Navbar */
+        .main-navbar {
+            flex-shrink: 0;
+            background-color: #ffffff; /* Fondo blanco */
+            border-bottom: 1px solid #e0e0e0; /* Borde más suave */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra sutil */
+            padding: 15px 40px; /* Más padding */
+            z-index: 1000; /* Asegura que esté encima de otros elementos menores */
+        }
+
+            .main-navbar .navbar-brand {
+                font-weight: 600;
+                color: #495057 !important; /* Color de texto más definido */
+                display: flex;
+                align-items: center;
+                gap: 10px; /* Espacio entre icono y texto */
+            }
+
+                .main-navbar .navbar-brand .bi-house-fill {
+                    font-size: 2.2rem; /* Icono home más grande */
+                    color: var(--color-cafe-oscuro); /* Color café */
+                    transition: transform 0.2s ease;
+                }
+
+                .main-navbar .navbar-brand:hover .bi-house-fill {
+                    transform: scale(1.1);
+                }
+
+        #indicadoresEstados {
+            font-size: 0.95rem; /* Tamaño de texto para los indicadores */
+        }
+
+            #indicadoresEstados strong {
+                color: #555;
+            }
+
+        #iconInternet, #iconServidor {
+            font-size: 0.7rem; /* Tamaño de los círculos de estado */
+            margin-left: 5px;
+        }
+
+        .btn-outline-danger {
+            border-color: var(--color-cafe-oscuro); /* Borde café */
+            color: var(--color-cafe-oscuro); /* Texto café */
+            transition: all 0.3s ease;
+        }
+
+            .btn-outline-danger:hover {
+                background-color: var(--color-cafe-oscuro); /* Fondo café en hover */
+                color: #fff; /* Texto blanco en hover */
+                border-color: var(--color-cafe-oscuro);
+            }
+
+        /* Contenido de la página (RenderBody) */
+        .main-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 30px 40px; /* Más padding para el contenido */
+            /* Quité el display:flex para que las páginas hijas no tengan que lidiar con eso por defecto,
+                       si Principal.cshtml quiere centrar, lo hará internamente. */
+        }
+
+        /* Footer */
+        .main-footer {
+            flex-shrink: 0;
+            background-color: #ffffff; /* Fondo blanco */
+            border-top: 1px solid #e0e0e0; /* Borde más suave */
+            padding: 15px 40px; /* Más padding */
+            font-size: 0.9rem; /* Tamaño de texto del footer */
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+
+<body>
+    @{
+        bool showSidebar = (bool)(ViewData["ShowSidebar"] ?? false);
+    }
+
+    <div class="app-container">
+        @if (showSidebar)
+        {
+            <nav class="sidebar-cdc">
+                <div class="logo-cdc">CDC Portal</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-page="/SubirDatos">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            Subir Proyección de Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-page="/ConsultaProyecciones">
+                            <i class="bi bi-search"></i>
+                            Consultar Proyecciones
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+
+        <div class="main-content-area">
+            <nav class="navbar navbar-expand-sm navbar-light bg-white main-navbar">
+                <div class="container-fluid">
+                    @* <a class="navbar-brand" asp-area="" asp-page="/Principal">
+                        <i class="bi bi-house-fill"></i>
+                        Home
+                    </a> *@
+                    <div class="d-flex align-items-center gap-3 ms-auto">
+                        <div id="indicadoresEstados" class="d-flex align-items-center gap-2 me-4">
+                            <div>
+                                <strong>Internet:</strong>
+                                <i id="iconInternet" class="bi bi-circle-fill text-secondary"></i>
+                            </div>
+                            <div>
+                                <strong>Servidor:</strong>
+                                <i id="iconServidor" class="bi bi-circle-fill text-secondary"></i>
+                            </div>
+                        </div>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <form method="post" asp-page="/Logout" class="mb-0">
+                                <button type="submit" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" title="Cerrar sesión">
+                                    <i class="bi bi-power"></i> Salir
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </nav>
+
+            <main role="main" class="main-body">
+                @RenderBody()
+            </main>
+
+            <footer class="text-muted main-footer">
+                <div class="d-flex justify-content-between">
+                    <span>© @DateTime.Now.Year Casa del Café - Todos los derechos reservados.</span>
+                    <span class="text-muted small">Versión 1.0</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/Semaforo.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+   @*  @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment env
+    <p style="color: red; font-weight: bold; text-align: center;">
+        Entorno actual detectado: @env.EnvironmentName
+    </p> *@
+
+</body>
+</html>
+
+                    @* version ultima 1 *@

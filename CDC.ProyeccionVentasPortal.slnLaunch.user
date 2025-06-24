@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Nuevo perfil",
+    "Projects": [
+      {
+        "Path": "CDC.ProyeccionVentas.API\\CDC.ProyeccionVentas.API.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "CDC.ProyeccionVentas.FrontEnd\\CDC.ProyeccionVentas.FrontEnd.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

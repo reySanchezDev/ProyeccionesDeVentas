@@ -1,0 +1,106 @@
+﻿@page
+@model CDC.ProyeccionVentas.FrontEnd.Pages.LoginModel
+@{
+    ViewData["Title"] = "Iniciar sesión";
+    // Layout = "_LayoutSimple";
+
+    // Precargar credenciales SOLO PARA DESARROLLO. Comenta o elimina para producción
+    //DesmarEnProduccion
+   // Model.NumeroEmpleado = Model.NumeroEmpleado ?? "00031360";
+}
+
+<style>
+    .login-container {
+        min-height: calc(100vh - 180px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    #logo-cdc {
+        height: 8em;
+        margin-bottom: 1rem;
+    }
+
+    .login-card {
+        background-color: #f8f9fa;
+        border: none;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 430px;
+    }
+
+    .login-btn {
+        width: 100%;
+        font-size: 1.1rem;
+        padding: 0.75rem;
+        border-radius: 2rem;
+        background-color: #A0522D;
+        color: white;
+        border: none;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+        .login-btn:hover {
+            background-color: #3CB371;
+            transform: scale(1.03);
+            color: white;
+        }
+
+    ::placeholder {
+        font-family: inherit !important;
+        font-size: 1rem !important;
+        color: #888 !important;
+        opacity: 1;
+        font-weight: normal;
+    }
+
+    .login-label {
+        font-weight: 600;
+    }
+
+    .login-error {
+        color: #c00;
+        font-size: 0.98em;
+        margin-bottom: 10px;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="login-container">
+    <img src="@Url.Content("~/resources/CdC-Logo-Vertical1.png")" alt="Logo" id="logo-cdc" />
+
+    <h2 class="mb-4 text-center">Bienvenido</h2>
+
+    <div class="card login-card">
+        <div class="card-body">
+            <form method="post" autocomplete="off">
+                <div class="mb-3 text-start">
+                    <label asp-for="NumeroEmpleado" class="login-label">Número de empleado</label>
+                    <input asp-for="NumeroEmpleado" class="form-control" placeholder="Número de empleado" autocomplete="off" />
+                    <span asp-validation-for="NumeroEmpleado" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label asp-for="Contraseña" class="login-label"></label>
+                    <input asp-for="Contraseña" class="form-control" placeholder="Contraseña del portal de vacaciones" type="password" autocomplete="off" />
+                    <span asp-validation-for="Contraseña" class="text-danger small"></span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="login-error">@Model.ErrorMessage</div>
+                }
+
+                <button type="submit" class="login-btn">Iniciar sesión</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
