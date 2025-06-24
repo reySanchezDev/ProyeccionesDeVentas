@@ -1,0 +1,16 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build folders
+bin/
+obj/
+
+# Archivos de configuración y log
+*.log
+*.dbmdl
+*.sqlite
+*.pdb
+appsettings.Development.json
+.env
