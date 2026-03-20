@@ -2,122 +2,222 @@
 @model ConsultaProyeccionesModel
 @{
     ViewData["Title"] = "Consulta de Proyecciones";
+    ViewData["ShowSidebar"] = true;
+    var mesActual = DateTime.Today.Month;
+    var totalResultados = Model.Resultados?.Count ?? 0;
+}
+@{
+    decimal totalMonto = 0;
+    if (Model.Resultados != null)
+    {
+        totalMonto = Model.Resultados.Sum(r => r.Monto);
+    }
 }
 
-<h2 class="mb-4">@ViewData["Title"]</h2>
+<div class="screen-shell consulta-proyecciones-shell">
+    <section class="screen-card screen-card-header screen-card-header-compact consulta-proyecciones-header">
+        <div class="screen-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+            <span id="mensajeDinamico" class="page-status-message screen-status" aria-live="polite"></span>
+        </div>
+    </section>
 
-<div id="mensajeDinamico" class="mt-2"></div>
+    <form method="post" class="row g-3 mb-4 screen-card screen-card-form" id="form-filtros">
+        <div class="col-md-3">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" asp-for="Filtro.FechaInicio" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" asp-for="Filtro.FechaFin" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Sucursal (opcional)</label>
+            <div class="dropdown w-100">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start store-filter-toggle"
+                        type="button"
+                        id="storeFilterDropdownButton"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside"
+                        aria-expanded="false">
+                    <span id="storeFilterSummary">@Model.ResumenSucursalesSeleccionadas</span>
+                </button>
+                <div class="dropdown-menu w-100 p-2 store-filter-menu" aria-labelledby="storeFilterDropdownButton">
+                    @foreach (var store in Model.StoresDisponibles)
+                    {
+                        var checkboxId = $"store-filter-{store.No}";
+                        <div class="form-check">
+                            <input class="form-check-input store-filter-check"
+                                   type="checkbox"
+                                   name="Filtro.CodSucursales"
+                                   value="@store.No"
+                                   id="@checkboxId"
+                                   @(Model.Filtro.CodSucursales.Contains(store.No) ? "checked" : null) />
+                            <label class="form-check-label" for="@checkboxId">@store.No - @store.StoreNo</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end"></div>
+    </form>
 
-<form method="post" class="row g-3 mb-4" id="form-filtros">
-    <div class="col-md-3">
-        <label class="form-label">Fecha Inicio</label>
-        <input type="date" class="form-control" asp-for="Filtro.FechaInicio" />
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Fecha Fin</label>
-        <input type="date" class="form-control" asp-for="Filtro.FechaFin" />
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Sucursal (opcional)</label>
-        <input type="text" class="form-control" asp-for="Filtro.CodSucursal" />
-    </div>
-    <div class="col-md-3 d-flex align-items-end">
-        @* The search button is now moved to the button bar below *@
-    </div>
-</form>
+    <section class="screen-card screen-card-actions">
+        <div class="d-flex justify-content-between align-items-center mb-3" id="botonera">
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary custom-btn-effect btn-buscar" form="form-filtros">
+                    <i class="bi bi-search me-1"></i> Buscar
+                </button>
+                <button id="btnLimpiar" class="btn btn-outline-secondary custom-btn-effect btn-limpiar">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </button>
+                <button id="btnRecargar" class="btn btn-outline-primary custom-btn-effect btn-recargar">
+                    <i class="bi bi-arrow-clockwise"></i> Recargar
+                </button>
+                <button id="btnExportarExcel" class="btn btn-outline-success custom-btn-effect btn-exportar" disabled>
+                    <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                </button>
+                <button id="btnEliminarMes" type="button" class="btn btn-outline-danger custom-btn-effect btn-eliminar-mes">
+                    <i class="bi bi-trash me-1"></i> Eliminar Mes
+                </button>
+                <span class="badge bg-info text-dark ms-3 fs-6 py-2 px-3 align-self-center badge-filas">
+                    Filas: <span id="filasCount">@totalResultados</span>
+                </span>
+                <span class="badge bg-success fs-6 py-2 px-3 align-self-center badge-total">
+                    Total: USD <span id="montoTotal">@totalMonto.ToString("N2")</span>
+                </span>
+            </div>
+        </div>
+    </section>
 
-<div class="d-flex justify-content-between align-items-center mb-3" id="botonera" style="display:@(Model.Resultados.Any() ? "flex" : "none")">
-    <div class="btn-group">
-        <a asp-page="/Principal" class="btn custom-btn-effect border d-inline-flex align-items-center btn-menu-principal">
-            <i class="bi bi-house-door-fill fs-5 me-1"></i> Menú principal
-        </a>
-        <button type="submit" class="btn btn-primary custom-btn-effect btn-buscar" form="form-filtros">
-            <i class="bi bi-search me-1"></i> Buscar
-        </button>
-        <button id="btnGuardar" class="btn btn-success custom-btn-effect btn-guardar" disabled>
-            <i class="bi bi-save"></i> Guardar
-        </button>
-        <button id="btnLimpiar" class="btn btn-outline-secondary custom-btn-effect btn-limpiar">
-            <i class="bi bi-x-circle"></i> Limpiar
-        </button>
-        <button id="btnRecargar" class="btn btn-outline-primary custom-btn-effect btn-recargar">
-            <i class="bi bi-arrow-clockwise"></i> Recargar
-        </button>
-        <button id="btnExportarExcel" class="btn btn-outline-success custom-btn-effect btn-exportar" disabled>
-            <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
-        </button>
-        @{
-            decimal totalMonto = 0;
-            if (Model.Resultados != null)
-            {
-                totalMonto = Model.Resultados.Sum(r => r.Monto);
-            }
-        }
-        <span class="badge bg-info text-dark ms-3 fs-6 py-2 px-3 align-self-center badge-filas">
-            Filas: <span id="filasCount">@(Model.Resultados?.Count ?? 0)</span>
-        </span>
-        <span class="badge bg-success fs-6 py-2 px-3 align-self-center badge-total">
-            Total: USD <span id="montoTotal">@totalMonto.ToString("N2")</span>
-        </span>
-    </div>
+    @if (Model.Resultados != null && Model.Resultados.Any())
+    {
+        <section class="screen-card screen-card-table">
+            <div class="table-responsive-scroll">
+                <table class="table table-bordered table-striped mt-2" id="tablaResultados">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width:5%;">ID</th>
+                            <th style="width:20%;">Fecha Proyección</th>
+                            <th style="width:20%;">Sucursal</th>
+                            <th style="width:20%;">Monto (USD)</th>
+                            <th style="width:20%;">Ticket Promedio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Resultados.Count; i++)
+                        {
+                            var item = Model.Resultados[i];
+                            <tr data-id="@item.Id">
+                                <td>@item.Id</td>
+                                <td>@item.Fecha.ToString("yyyy-MM-dd")</td>
+                                <td>@item.CodSucursal</td>
+                                <td>
+                                    <input type="text" class="form-control editable-field input-monto"
+                                           data-index="@i"
+                                           data-field="monto"
+                                           inputmode="decimal"
+                                           autocomplete="off"
+                                           value="@item.Monto.ToString("F2")" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control editable-field input-ticket-promedio"
+                                           data-index="@i"
+                                           data-field="ticketPromedio"
+                                           inputmode="numeric"
+                                           autocomplete="off"
+                                           value="@(item.TicketPromedio?.ToString() ?? string.Empty)" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+    else if (Model.MostrarMensajeSinResultados)
+    {
+        <div class="alert alert-info text-center mt-4">
+            No se encontraron resultados para los filtros aplicados.
+        </div>
+    }
 </div>
 
-@if (Model.Resultados != null && Model.Resultados.Any())
-{
-    <div class="table-responsive-scroll">
-        @* AÑADIDO: Contenedor para el scroll *@
-        <table class="table table-bordered table-striped mt-2" id="tablaResultados">
-            <thead class="table-dark">
-                <tr>
-                    <th style="width:5%;">ID</th>
-                    <th style="width:20%;">Fecha Proyección</th>
-                    <th style="width:25%;">Sucursal</th>
-                    <th style="width:25%;">Monto (USD)</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (int i = 0; i < Model.Resultados.Count; i++)
-                {
-                    var item = Model.Resultados[i];
-                    <tr>
-                        <td>@item.Id</td>
-                        <td>@item.Fecha.ToString("yyyy-MM-dd")</td>
-                        <td>@item.CodSucursal</td>
-                        <td>
-                            <input type="text" class="form-control input-monto"
-                                   data-index="@i"
-                                   value="@item.Monto.ToString("F2")" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div> @* CIERRE DEL CONTENEDOR *@
-}
-else if (Model.MostrarMensajeSinResultados)
-{
-    <div class="alert alert-info text-center mt-4">
-        No se encontraron resultados para los filtros aplicados.
-    </div>
-}
-
-<div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteMonthModal" tabindex="-1" aria-labelledby="deleteMonthModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="confirmSaveModalLabel">Confirmar Guardar</h5>
+                <h5 class="modal-title" id="deleteMonthModalLabel">Eliminar Proyecciones por Mes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="anioEliminar" class="form-label">Año</label>
+                    <select id="anioEliminar" class="form-select">
+                        <option value="">Seleccione un año</option>
+                        @foreach (var anio in Model.AniosEliminar)
+                        {
+                            if (anio == Model.AnioActual)
+                            {
+                                <option value="@anio" selected>@anio</option>
+                            }
+                            else
+                            {
+                                <option value="@anio">@anio</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mesEliminar" class="form-label">Mes</label>
+                    <select id="mesEliminar" class="form-select">
+                        <option value="">Seleccione un mes</option>
+                        @foreach (var mes in Model.MesesEliminar)
+                        {
+                            if (mes.Valor == mesActual)
+                            {
+                                <option value="@mes.Valor" selected>@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                            }
+                            else
+                            {
+                                <option value="@mes.Valor">@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="alert alert-warning mb-0">
+                    Esta acción eliminará todas las proyecciones del mes seleccionado para todas las sucursales.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary custom-modal-btn" data-bs-dismiss="modal" id="btnCancelarEliminarMes">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger custom-modal-btn" id="btnSolicitarConfirmacionEliminar">
+                    <i class="bi bi-trash me-1"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <i class="bi bi-question-circle-fill text-warning fs-1 mb-3"></i>
-                <p>¿Está seguro que desea aplicar los cambios realizados en los montos?</p>
+                <i class="bi bi-exclamation-octagon-fill text-danger fs-1 mb-3"></i>
+                <p id="textoConfirmacionEliminar">Se eliminarán todas las proyecciones del mes seleccionado. ¿Desea continuar?</p>
             </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-danger custom-btn-effect" data-bs-dismiss="modal" id="btnCancelSaveModal">
+                <button type="button" class="btn btn-secondary custom-btn-effect" data-bs-dismiss="modal" id="btnCancelarConfirmacionEliminar">
                     <i class="bi bi-x-circle me-1"></i> Cancelar
                 </button>
-                <button type="button" class="btn btn-success custom-btn-effect" id="btnConfirmSaveModal">
-                    <i class="bi bi-check-circle me-1"></i> Aceptar
+                <button type="button" class="btn btn-danger custom-btn-effect" id="btnConfirmarEliminarFinal">
+                    <i class="bi bi-trash me-1"></i> Eliminar
                 </button>
             </div>
         </div>
@@ -147,6 +247,7 @@ else if (Model.MostrarMensajeSinResultados)
     </div>
 </div>
 
+
 @* Modal para exportar a Excel *@
 <div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -174,181 +275,575 @@ else if (Model.MostrarMensajeSinResultados)
         </div>
     </div>
 </div>
-
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        const cambios = {};
-        let cambiosPendientes = false;
-
-        // Get references to the modals and their buttons
-        const confirmSaveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
-        const btnConfirmSave = document.getElementById('btnConfirmSaveModal');
-        const btnCancelSave = document.getElementById('btnCancelSaveModal');
+        let messageTimeoutId = null;
+        const rowSaveStates = new Map();
 
         const confirmClearModal = new bootstrap.Modal(document.getElementById('confirmClearModal'));
         const btnConfirmClear = document.getElementById('btnConfirmClearModal');
         const btnCancelClear = document.getElementById('btnCancelClearModal');
 
-        // Referencias para el nuevo modal de exportación
         const exportExcelModal = new bootstrap.Modal(document.getElementById('exportExcelModal'));
+        const deleteMonthModal = new bootstrap.Modal(document.getElementById('deleteMonthModal'));
+        const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
         const btnConfirmExportExcel = document.getElementById('confirmExportExcel');
+        const btnEliminarMes = document.getElementById("btnEliminarMes");
+        const btnSolicitarConfirmacionEliminar = document.getElementById("btnSolicitarConfirmacionEliminar");
+        const btnConfirmarEliminarFinal = document.getElementById("btnConfirmarEliminarFinal");
+        const btnCancelarConfirmacionEliminar = document.getElementById("btnCancelarConfirmacionEliminar");
+        const tablaResultados = document.getElementById("tablaResultados");
+        const guardarUrl = `${window.location.pathname}?handler=Guardar`;
+        const eliminarUrl = `${window.location.pathname}?handler=Eliminar`;
+        const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+        const nombresMeses = [
+            "",
+            "enero",
+            "febrero",
+            "marzo",
+            "abril",
+            "mayo",
+            "junio",
+            "julio",
+            "agosto",
+            "septiembre",
+            "octubre",
+            "noviembre",
+            "diciembre"
+        ];
 
-
-        const mostrarMensaje = (tipo, texto) => {
-            const contenedor = document.getElementById("mensajeDinamico");
-            contenedor.innerHTML = `
-                <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
-                    ${texto}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                </div>`;
-            setTimeout(() => contenedor.innerHTML = "", 5000);
+        const limpiarTimeoutMensaje = () => {
+            if (messageTimeoutId) {
+                clearTimeout(messageTimeoutId);
+                messageTimeoutId = null;
+            }
         };
 
-        document.querySelectorAll(".input-monto").forEach(input => {
-            input.addEventListener("input", () => {
-                const index = input.dataset.index;
-                const valor = input.value.trim();
-                // Expresión regular para permitir números, punto o coma, y hasta 2 decimales
-                const esValido = /^\d*([.,]\d{0,2})?$/.test(valor);
+        const mostrarMensaje = (tipo, texto, duracion = 5000) => {
+            limpiarTimeoutMensaje();
+            const contenedor = document.getElementById("mensajeDinamico");
+            contenedor.textContent = texto;
+            contenedor.className = `page-status-message is-${tipo}`;
 
+            if (duracion > 0) {
+                messageTimeoutId = setTimeout(() => {
+                    contenedor.textContent = "";
+                    contenedor.className = "page-status-message";
+                    messageTimeoutId = null;
+                }, duracion);
+            }
+        };
 
-                if (!esValido) {
-                    input.classList.add("is-invalid");
-                    delete cambios[index]; // Eliminar el cambio si el formato es inválido
-                } else {
-                    input.classList.remove("is-invalid");
-                    cambios[index] = valor.replace(",", "."); // Reemplazar coma por punto para consistencia
-                }
+        const normalizarMonto = (valor) => valor.trim().replace(",", ".");
+        const normalizarTicket = (valor) => valor.trim().replace(",", ".");
 
-                // Verificar si hay algún cambio válido para habilitar/deshabilitar el botón Guardar
-                let hayCambiosValidos = false;
-                document.querySelectorAll(".input-monto").forEach(inp => {
-                    const idx = inp.dataset.index;
-                    if (!inp.classList.contains("is-invalid") && cambios.hasOwnProperty(idx) && inp.value !== inp.dataset.originalValue) {
-                        hayCambiosValidos = true;
-                    }
-                });
-                cambiosPendientes = hayCambiosValidos;
-                document.getElementById("btnGuardar").disabled = !cambiosPendientes;
+        const esValorMontoParcialValido = (valor) => {
+            const valorNormalizado = valor.replace(",", ".");
+            if (!valorNormalizado) return true;
+            return /^\d+([.]\d{0,2})?$/.test(valorNormalizado);
+        };
 
-            });
+        const esValorTicketParcialValido = (valor) => /^\d*$/.test(valor);
+
+        const construirValorEditado = (input, texto) => {
+            const inicio = input.selectionStart ?? input.value.length;
+            const fin = input.selectionEnd ?? input.value.length;
+            return `${input.value.slice(0, inicio)}${texto}${input.value.slice(fin)}`;
+        };
+
+        const obtenerMontoNormalizado = (input) => {
+            const valor = normalizarMonto(input.value);
+            if (!valor) return "";
+
+            const numero = Number(valor);
+            return Number.isFinite(numero) ? numero.toFixed(2) : "";
+        };
+
+        const obtenerTicketNormalizado = (input, emptyAsZero = false) => {
+            const valor = normalizarTicket(input.value);
+            if (!valor) return emptyAsZero ? "0" : "";
+
+            const numero = Number(valor);
+            if (!Number.isFinite(numero) || !Number.isInteger(numero) || numero < 0) {
+                return "";
+            }
+
+            return String(numero);
+        };
+
+        const obtenerSeleccionEliminar = () => {
+            const mes = Number(document.getElementById("mesEliminar")?.value);
+            const anio = Number(document.getElementById("anioEliminar")?.value);
+
+            if (!mes || !anio) {
+                return null;
+            }
+
+            const ultimoDia = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+            return {
+                mes,
+                anio,
+                fechaInicio: `${anio}-${String(mes).padStart(2, "0")}-01`,
+                fechaFin: `${anio}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`,
+                etiquetaMes: `${nombresMeses[mes]} ${anio}`
+            };
+        };
+
+        const validarMontoInput = (input) => {
+            const valor = normalizarMonto(input.value);
+            const esValido = !!valor && /^\d+([.]\d{0,2})?$/.test(valor) && Number.isFinite(Number(valor)) && Number(valor) >= 0;
+            input.classList.toggle("is-invalid", !esValido);
+            return esValido;
+        };
+
+        const validarTicketInput = (input) => {
+            const valor = normalizarTicket(input.value);
+            if (!valor) {
+                input.classList.remove("is-invalid");
+                return true;
+            }
+
+            const numero = Number(valor);
+            const esValido = Number.isFinite(numero) && Number.isInteger(numero) && numero >= 0;
+            input.classList.toggle("is-invalid", !esValido);
+            return esValido;
+        };
+
+        const obtenerElementosFila = (fila) => ({
+            montoInput: fila.querySelector('[data-field="monto"]'),
+            ticketInput: fila.querySelector('[data-field="ticketPromedio"]')
         });
 
-        // Event listener para inicializar el valor original de los inputs de monto
-        document.addEventListener("DOMContentLoaded", () => {
-            const tabla = document.getElementById("tablaResultados");
-            const btnExportar = document.getElementById("btnExportarExcel");
-            const btnGuardar = document.getElementById("btnGuardar");
-
-            if (tabla && tabla.querySelectorAll("tbody tr").length > 0) {
-                btnExportar.disabled = false; // Habilita el botón de exportar si hay datos
-                const inputMontos = tabla.querySelectorAll(".input-monto");
-                inputMontos.forEach(input => {
-                    // Guarda el valor original del input al cargar la página
-                    input.dataset.originalValue = input.value;
+        const obtenerEstadoFila = (rowId) => {
+            if (!rowSaveStates.has(rowId)) {
+                rowSaveStates.set(rowId, {
+                    saving: false,
+                    queued: null
                 });
             }
-        });
 
+            return rowSaveStates.get(rowId);
+        };
 
-        // Event listener for the "Guardar" button (opens the modal)
-        document.getElementById("btnGuardar")?.addEventListener("click", async function (e) {
-            e.preventDefault();
-            if (!Object.keys(cambios).length || !cambiosPendientes) {
-                mostrarMensaje("warning", "No hay cambios pendientes para guardar.");
+        const actualizarTotalMonto = () => {
+            if (!tablaResultados) return;
+
+            let total = 0;
+            tablaResultados.querySelectorAll('[data-field="monto"]').forEach(input => {
+                const valor = Number(input.dataset.originalValue || "0");
+                if (Number.isFinite(valor)) {
+                    total += valor;
+                }
+            });
+
+            const totalElemento = document.getElementById("montoTotal");
+            if (totalElemento) {
+                totalElemento.innerText = total.toLocaleString("es-NI", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        };
+
+        const obtenerMensajeErrorDesdeResponse = async (response) => {
+            const contentType = response.headers.get("content-type") || "";
+            let errorMessage = `HTTP ${response.status}`;
+
+            if (contentType.includes("application/json")) {
+                const errorData = await response.json();
+                return errorData.error || errorData.mensaje || errorData.message || errorMessage;
+            }
+
+            const errorText = await response.text();
+            const errorTextPlano = errorText
+                .replace(/<[^>]+>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            return errorTextPlano || errorMessage;
+        };
+
+        const formatearInputDesdeValorGuardado = (input, valorNormalizado) => {
+            if (input.dataset.field === "monto") {
+                input.value = Number(valorNormalizado).toFixed(2);
+                input.dataset.originalValue = Number(valorNormalizado).toFixed(2);
                 return;
             }
 
-            // Validar que todos los campos de monto con cambios sean numéricamente válidos antes de mostrar el modal
-            let allChangesValid = true;
-            for (const index in cambios) {
-                const inputElement = document.querySelector(`.input-monto[data-index="${index}"]`);
-                if (inputElement && inputElement.classList.contains('is-invalid')) {
-                    allChangesValid = false;
-                    break;
-                }
-                // También valida el valor final en el objeto `cambios`
-                if (isNaN(parseFloat(cambios[index]))) {
-                    allChangesValid = false;
-                    break;
-                }
-            }
+            input.value = String(Number(valorNormalizado));
+            input.dataset.originalValue = String(Number(valorNormalizado));
+        };
 
-            if (!allChangesValid) {
-                mostrarMensaje("danger", "Algunos montos tienen un formato inválido. Por favor, corríjalos antes de guardar.");
+        const restaurarValorOriginal = (input) => {
+            const valorOriginal = input.dataset.originalValue || (input.dataset.field === "monto" ? "0.00" : "0");
+            formatearInputDesdeValorGuardado(input, valorOriginal);
+            input.classList.remove("is-invalid");
+        };
+
+        const manejarKeydownEditable = (event, input) => {
+            if (event.ctrlKey || event.metaKey || event.altKey) {
                 return;
             }
 
-            confirmSaveModal.show(); // Show the save confirmation modal
-        });
+            const teclasPermitidas = new Set([
+                "Backspace",
+                "Delete",
+                "Tab",
+                "Enter",
+                "Escape",
+                "ArrowLeft",
+                "ArrowRight",
+                "ArrowUp",
+                "ArrowDown",
+                "Home",
+                "End"
+            ]);
 
-        // Event listener for the "Aceptar" button inside the Save modal
-        btnConfirmSave.addEventListener("click", async function () {
-            confirmSaveModal.hide(); // Hide the modal
+            if (teclasPermitidas.has(event.key)) {
+                return;
+            }
 
-            const filas = document.querySelectorAll("#tablaResultados tbody tr");
-            const data = [];
+            if (event.key.length !== 1) {
+                return;
+            }
 
-            Object.entries(cambios).forEach(([index, nuevoMonto]) => {
-                const fila = filas[parseInt(index)];
-                const id = parseInt(fila.children[0].innerText);
-                data.push({ id, monto: Number(nuevoMonto) });
-            });
+            const siguienteValor = construirValorEditado(input, event.key);
+            const esPermitido = input.dataset.field === "monto"
+                ? esValorMontoParcialValido(siguienteValor)
+                : esValorTicketParcialValido(siguienteValor);
+
+            if (!esPermitido) {
+                event.preventDefault();
+            }
+        };
+
+        const manejarPasteEditable = (event, input) => {
+            const textoPegado = event.clipboardData?.getData("text") ?? "";
+            const siguienteValor = construirValorEditado(input, textoPegado);
+            const esPermitido = input.dataset.field === "monto"
+                ? esValorMontoParcialValido(siguienteValor)
+                : esValorTicketParcialValido(siguienteValor);
+
+            if (!esPermitido) {
+                event.preventDefault();
+            }
+        };
+
+        const manejarInputEditable = (input) => {
+            if (input.dataset.field === "monto") {
+                input.classList.toggle("is-invalid", !esValorMontoParcialValido(input.value));
+                return;
+            }
+
+            input.classList.toggle("is-invalid", !esValorTicketParcialValido(input.value));
+        };
+
+        const construirPayloadRegistro = (fila, campoCambiado) => {
+            const rowId = Number(fila.dataset.id);
+            const { montoInput, ticketInput } = obtenerElementosFila(fila);
+
+            if (!Number.isInteger(rowId)) {
+                throw new Error("No se encontró el Id del registro a actualizar.");
+            }
+
+            const montoValido = validarMontoInput(montoInput);
+            const ticketValido = validarTicketInput(ticketInput);
+
+            if (campoCambiado === "monto" && !montoValido) {
+                return null;
+            }
+
+            if (campoCambiado === "ticketPromedio" && !ticketValido) {
+                return null;
+            }
+
+            const montoActual = montoValido ? obtenerMontoNormalizado(montoInput) : (montoInput.dataset.originalValue || "0.00");
+            const ticketActual = ticketValido ? obtenerTicketNormalizado(ticketInput, true) : (ticketInput.dataset.originalValue || "0");
+
+            return {
+                id: rowId,
+                monto: Number(montoActual),
+                ticketPromedio: Number(ticketActual)
+            };
+        };
+
+        const guardarRegistro = async (fila, campoCambiado, payload) => {
+            const rowId = payload.id;
+            const estadoFila = obtenerEstadoFila(rowId);
+            estadoFila.saving = true;
+            fila.dataset.saving = "true";
+
+                mostrarMensaje("info", "Modificando...", 0);
 
             try {
-                const response = await fetch("/ConsultaProyecciones?handler=Guardar", {
+                const response = await fetch(guardarUrl, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "RequestVerificationToken": document.querySelector("input[name=__RequestVerificationToken]").value
+                        "RequestVerificationToken": tokenAntiforgery()
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify([payload])
                 });
 
-                if (response.ok) {
-                    mostrarMensaje("success", "Cambios guardados correctamente.");
-                    // Clear the changes object after successful save
-                    for (const key in cambios) {
-                        delete cambios[key];
-                    }
-                    cambiosPendientes = false;
-                    document.getElementById("btnGuardar").disabled = true; // Disable save button after saving
-                    // Actualizar los valores originales de los inputs después de un guardado exitoso
-                    document.querySelectorAll(".input-monto").forEach(input => {
-                        input.dataset.originalValue = input.value;
-                    });
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    const errorText = await response.text(); // Get error message from server
-                    mostrarMensaje("danger", `Ocurrió un error al guardar los cambios: ${errorText}`);
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeErrorDesdeResponse(response));
                 }
+
+                const { montoInput, ticketInput } = obtenerElementosFila(fila);
+                const inputActualizado = campoCambiado === "monto" ? montoInput : ticketInput;
+                const valorGuardado = campoCambiado === "monto"
+                    ? payload.monto.toFixed(2)
+                    : String(payload.ticketPromedio);
+
+                formatearInputDesdeValorGuardado(inputActualizado, valorGuardado);
+                inputActualizado.classList.remove("is-invalid");
+
+                if (campoCambiado === "monto") {
+                    actualizarTotalMonto();
+                }
+
+                mostrarMensaje("info", "Modificando...", 1200);
             } catch (error) {
-                mostrarMensaje("danger", "Error al comunicarse con el servidor.");
+                mostrarMensaje("danger", `Ocurrió un error al guardar los cambios: ${error.message}`);
+            } finally {
+                estadoFila.saving = false;
+                fila.dataset.saving = "false";
+
+                if (estadoFila.queued) {
+                    const queued = estadoFila.queued;
+                    estadoFila.queued = null;
+                    await guardarRegistro(fila, queued.campoCambiado, queued.payload);
+                }
+            }
+        };
+
+        const encolarGuardado = (fila, campoCambiado, payload) => {
+            const estadoFila = obtenerEstadoFila(payload.id);
+
+            if (estadoFila.saving) {
+                estadoFila.queued = { campoCambiado, payload };
+                return;
+            }
+
+            void guardarRegistro(fila, campoCambiado, payload);
+        };
+
+        const manejarBlurEditable = (input) => {
+            const fila = input.closest("tr");
+            if (!fila) return;
+
+            const campoCambiado = input.dataset.field;
+
+            if (campoCambiado === "monto" && normalizarMonto(input.value) === "") {
+                restaurarValorOriginal(input);
+                mostrarMensaje("danger", "Monto (USD) es obligatorio y se restauró el valor anterior.");
+                return;
+            }
+
+            if (campoCambiado === "ticketPromedio" && normalizarTicket(input.value) === "") {
+                input.value = "0";
+            }
+
+            const esValido = campoCambiado === "monto"
+                ? validarMontoInput(input)
+                : validarTicketInput(input);
+
+            if (!esValido) {
+                if (campoCambiado === "monto") {
+                    restaurarValorOriginal(input);
+                }
+                mostrarMensaje(
+                    "danger",
+                    campoCambiado === "monto"
+                        ? "Monto (USD) debe ser numérico, mayor o igual a cero y con máximo 2 decimales."
+                        : "Ticket Promedio debe ser un número entero mayor o igual a cero."
+                );
+                return;
+            }
+
+            const valorActual = campoCambiado === "monto"
+                ? obtenerMontoNormalizado(input)
+                : obtenerTicketNormalizado(input, true);
+
+            if (valorActual === input.dataset.originalValue) {
+                formatearInputDesdeValorGuardado(input, valorActual);
+                input.classList.remove("is-invalid");
+                return;
+            }
+
+            const payload = construirPayloadRegistro(fila, campoCambiado);
+            if (!payload) {
+                mostrarMensaje(
+                    "danger",
+                    campoCambiado === "monto"
+                        ? "Monto (USD) debe ser numérico, mayor o igual a cero y con máximo 2 decimales."
+                        : "Ticket Promedio debe ser un número entero mayor o igual a cero."
+                );
+                return;
+            }
+
+            encolarGuardado(fila, campoCambiado, payload);
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const btnExportar = document.getElementById("btnExportarExcel");
+            const storeFilterSummary = document.getElementById("storeFilterSummary");
+            const storeFilterChecks = Array.from(document.querySelectorAll(".store-filter-check"));
+
+            const actualizarResumenSucursales = () => {
+                if (!storeFilterSummary) return;
+
+                const seleccionadas = storeFilterChecks
+                    .filter(check => check.checked)
+                    .map(check => check.value);
+
+                if (seleccionadas.length === 0) {
+                    storeFilterSummary.textContent = "Todas las sucursales";
+                    return;
+                }
+
+                if (seleccionadas.length <= 2) {
+                    storeFilterSummary.textContent = seleccionadas.join(", ");
+                    return;
+                }
+
+                storeFilterSummary.textContent = `${seleccionadas.length} sucursales seleccionadas`;
+            };
+
+            storeFilterChecks.forEach(check => {
+                check.addEventListener("change", actualizarResumenSucursales);
+            });
+
+            actualizarResumenSucursales();
+
+            if (tablaResultados && tablaResultados.querySelectorAll("tbody tr").length > 0) {
+                btnExportar.disabled = false;
+
+                tablaResultados.querySelectorAll('[data-field="monto"]').forEach(input => {
+                    input.dataset.originalValue = obtenerMontoNormalizado(input);
+                    input.addEventListener("keydown", (event) => manejarKeydownEditable(event, input));
+                    input.addEventListener("paste", (event) => manejarPasteEditable(event, input));
+                    input.addEventListener("drop", (event) => event.preventDefault());
+                    input.addEventListener("input", () => manejarInputEditable(input));
+                    input.addEventListener("blur", () => manejarBlurEditable(input));
+                });
+
+                tablaResultados.querySelectorAll('[data-field="ticketPromedio"]').forEach(input => {
+                    input.dataset.originalValue = obtenerTicketNormalizado(input, true);
+                    input.addEventListener("keydown", (event) => manejarKeydownEditable(event, input));
+                    input.addEventListener("paste", (event) => manejarPasteEditable(event, input));
+                    input.addEventListener("drop", (event) => event.preventDefault());
+                    input.addEventListener("input", () => manejarInputEditable(input));
+                    input.addEventListener("blur", () => manejarBlurEditable(input));
+                });
+
+                actualizarTotalMonto();
             }
         });
 
-        // Event listener for the "Cancelar" button inside the Save modal (optional, but good practice)
-        btnCancelSave.addEventListener("click", function () {
-            confirmSaveModal.hide(); // Just hide the modal, no action
-        });
 
-
-        // Event listener for the "Limpiar" button (opens the modal)
         document.getElementById("btnLimpiar")?.addEventListener("click", function (e) {
             e.preventDefault();
-            confirmClearModal.show(); // Show the clear confirmation modal
+            confirmClearModal.show();
         });
 
-        // Event listener for the "Aceptar" button inside the Clear modal
         btnConfirmClear.addEventListener("click", function () {
-            confirmClearModal.hide(); // Hide the modal
-            location.href = location.pathname; // Proceed with cleaning
+            confirmClearModal.hide();
+            location.href = location.pathname;
         });
 
-        // Event listener for the "Cancelar" button inside the Clear modal (optional)
         btnCancelClear.addEventListener("click", function () {
-            confirmClearModal.hide(); // Just hide the modal, no action
+            confirmClearModal.hide();
+        });
+
+        btnEliminarMes?.addEventListener("click", function () {
+            deleteMonthModal.show();
+        });
+
+        btnSolicitarConfirmacionEliminar?.addEventListener("click", function () {
+            const seleccion = obtenerSeleccionEliminar();
+
+            if (!seleccion) {
+                mostrarMensaje("warning", "Debe seleccionar un mes y un año para eliminar.");
+                return;
+            }
+
+            document.getElementById("textoConfirmacionEliminar").innerText =
+                `Se eliminarán todas las proyecciones de ${seleccion.etiquetaMes}. ¿Desea continuar?`;
+
+            deleteMonthModal.hide();
+            confirmDeleteModal.show();
+        });
+
+        btnCancelarConfirmacionEliminar?.addEventListener("click", function () {
+            confirmDeleteModal.hide();
+            setTimeout(() => deleteMonthModal.show(), 150);
+        });
+
+        btnConfirmarEliminarFinal?.addEventListener("click", async function () {
+            const seleccion = obtenerSeleccionEliminar();
+
+            if (!seleccion) {
+                confirmDeleteModal.hide();
+                mostrarMensaje("warning", "Debe seleccionar un mes y un año válidos.");
+                return;
+            }
+
+            try {
+                const response = await fetch(eliminarUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify({
+                        fechaInicio: seleccion.fechaInicio,
+                        fechaFin: seleccion.fechaFin
+                    })
+                });
+
+                if (response.ok) {
+                    const resultado = await response.json();
+                    confirmDeleteModal.hide();
+                    deleteMonthModal.hide();
+
+                    mostrarMensaje(
+                        resultado.registrosEliminados > 0 ? "success" : "info",
+                        resultado.mensaje || "Operación completada."
+                    );
+
+                    setTimeout(() => {
+                        if (tablaResultados) {
+                            document.getElementById("form-filtros").submit();
+                        } else {
+                            location.reload();
+                        }
+                    }, 1500);
+                } else {
+                    const contentType = response.headers.get("content-type") || "";
+                    let errorMessage = `HTTP ${response.status}`;
+
+                    if (contentType.includes("application/json")) {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorData.mensaje || errorData.message || errorMessage;
+                    } else {
+                        const errorText = await response.text();
+                        const errorTextPlano = errorText
+                            .replace(/<[^>]+>/g, " ")
+                            .replace(/\s+/g, " ")
+                            .trim();
+
+                        if (errorTextPlano) {
+                            errorMessage = errorTextPlano;
+                        }
+                    }
+
+                    mostrarMensaje("danger", `Ocurrió un error al eliminar los registros: ${errorMessage}`);
+                }
+            } catch (error) {
+                mostrarMensaje("danger", `Error al comunicarse con el servidor: ${error.message}`);
+            }
         });
 
 
@@ -364,35 +859,31 @@ else if (Model.MostrarMensajeSinResultados)
             }
         });
 
-        // Event listener para el botón Exportar a Excel (abre el modal)
         document.getElementById("btnExportarExcel")?.addEventListener("click", function () {
             const filas = document.querySelectorAll("#tablaResultados tbody tr");
-            if (filas.length === 0) return; // No hacer nada si no hay filas
+            if (filas.length === 0) return;
 
-            exportExcelModal.show(); // Mostrar el modal para el nombre del archivo
+            exportExcelModal.show();
         });
 
-        // Event listener para el botón "Exportar" dentro del modal de Excel
         btnConfirmExportExcel?.addEventListener("click", function () {
             const filas = document.querySelectorAll("#tablaResultados tbody tr");
-            // Encabezados excluyendo "ID"
-            const encabezados = ["Fecha", "Sucursal", "Monto"];
+            const encabezados = ["Fecha", "Sucursal", "Monto", "Ticket Promedio"];
             const data = [encabezados];
 
             filas.forEach(fila => {
                 const celdas = fila.querySelectorAll("td");
                 const filaData = [
-                    // Excluye celdas[0] que es el ID
-                    celdas[1].innerText, // Fecha Proyección
-                    celdas[2].innerText, // Sucursal
-                    celdas[3].querySelector("input")?.value || "" // Monto
+                    celdas[1].innerText,
+                    celdas[2].innerText,
+                    celdas[3].querySelector("input")?.value || "",
+                    celdas[4].querySelector("input")?.value || ""
                 ];
                 data.push(filaData);
             });
 
             let nombre = document.getElementById("fileNameInput").value;
             if (!nombre) {
-                // Si el nombre está vacío, usa uno por defecto
                 nombre = "Proyecciones";
             }
 
@@ -401,175 +892,8 @@ else if (Model.MostrarMensajeSinResultados)
             XLSX.utils.book_append_sheet(wb, ws, "Proyecciones");
             XLSX.writeFile(wb, `${nombre}.xlsx`);
 
-            // Ocultar el modal después de exportar
             exportExcelModal.hide();
         });
-
-
-        // Ocultar mensaje de éxito inicial si existe (del código anterior)
-        setTimeout(() => {
-            const mensaje = document.getElementById("mensajeExito");
-            if (mensaje) mensaje.remove();
-        }, 5000);
     </script>
 
-    <style>
-        .custom-btn-effect {
-            transition: all 0.3s ease;
-            /* Default text color for all custom effect buttons */
-            color: #212529; /* A dark grey that works well on light backgrounds */
-        }
-
-            .custom-btn-effect:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-
-        /* AÑADIDO: Estilos para el scroll de la tabla */
-        .table-responsive-scroll {
-            max-height: 500px; /* Puedes ajustar esta altura según tus necesidades */
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Para un scroll más suave en dispositivos táctiles */
-        }
-
-            /* Opcional: Para asegurar que el encabezado de la tabla sea visible incluso con el scroll */
-            .table-responsive-scroll thead th {
-                position: sticky;
-                top: 0;
-                background-color: #343a40; /* Color de fondo del thead */
-                color: white;
-                z-index: 10; /* Para que esté por encima del contenido al hacer scroll */
-            }
-
-        /* Styles for modal icons */
-        .modal-body i {
-            font-size: 4rem; /* Adjust icon size as needed */
-            margin-bottom: 1rem;
-        }
-
-        .modal-body p {
-            font-size: 1.1rem; /* Adjust text size as needed */
-            font-weight: 500;
-        }
-
-        /* Estilos para los nuevos widgets de filas y monto total */
-        #botonera .badge {
-            min-width: 120px; /* Ajusta el ancho mínimo si es necesario */
-            text-align: center;
-        }
-
-        /* Custom styles for the buttons - Softer and more elegant */
-        .btn-menu-principal {
-            background-color: #e0e0e0 !important; /* Lighter grey */
-            border-color: #c0c0c0 !important;
-            color: #212529 !important; /* Set a darker, more visible text color */
-            border-top-left-radius: 0.375rem !important; /* Rounded left corners */
-            border-bottom-left-radius: 0.375rem !important; /* Rounded left corners */
-            border-top-right-radius: 0 !important; /* Ensure square right corner */
-            border-bottom-right-radius: 0 !important; /* Ensure square right corner */
-        }
-
-            .btn-menu-principal:hover {
-                background-color: #d0d0d0 !important; /* Slightly darker on hover */
-                border-color: #b0b0b0 !important;
-                color: #212529 !important; /* Keep text dark on hover */
-            }
-
-        .btn-buscar {
-            background-color: #bbdefb !important; /* Soft light blue */
-            border-color: #90caf9 !important;
-            color: #212529 !important; /* Set a darker, more visible text color */
-            border-radius: 0 !important; /* Ensure square corners */
-        }
-
-            .btn-buscar:hover {
-                background-color: #a7d1f5 !important; /* Slightly darker on hover */
-                border-color: #7abff2 !important;
-                color: #212529 !important; /* Keep text dark on hover */
-            }
-
-        .btn-guardar {
-            background-color: #c8e6c9 !important; /* Soft light green */
-            border-color: #a5d6a7 !important;
-            color: #212529 !important; /* Set a darker, more visible text color */
-            border-radius: 0 !important; /* Ensure square corners */
-        }
-
-            .btn-guardar:hover {
-                background-color: #b9d9ba !important; /* Slightly darker on hover */
-                border-color: #95c797 !important;
-                color: #212529 !important; /* Keep text dark on hover */
-            }
-
-        .btn-limpiar {
-            background-color: #ffe082 !important; /* Soft light yellow/orange */
-            border-color: #ffd54f !important;
-            color: #212529 !important; /* Set a darker, more visible text color */
-            border-radius: 0 !important; /* Ensure square corners */
-        }
-
-            .btn-limpiar:hover {
-                background-color: #ffd560 !important; /* Slightly darker on hover */
-                border-color: #ffc930 !important;
-                color: #212529 !important; /* Keep text dark on hover */
-            }
-
-        .btn-recargar {
-            background-color: #bbdefb !important; /* Soft light blue */
-            border-color: #90caf9 !important;
-            color: #212529 !important; /* Set a darker, more visible text color */
-            /* border-top-right-radius: 0.375rem !important; /* Rounded right corners */ */
-            /* border-bottom-right-radius: 0.375rem !important; /* Rounded right corners */ */
-            /* border-top-left-radius: 0 !important; /* Ensure square left corner */ */
-            /* border-bottom-left-radius: 0 !important; /* Ensure square left corner */ */
-        }
-
-            .btn-recargar:hover {
-                background-color: #a7d1f5 !important; /* Slightly darker on hover */
-                border-color: #7abff2 !important;
-                color: #212529 !important; /* Keep text dark on hover */
-            }
-
-        /* Padding for the 'Filas' badge */
-        .badge-filas {
-            margin-left: 20px !important; /* Reduced margin to bring closer */
-            background-color: #b2ebf2 !important; /* A light cyan for contrast */
-            color: #212529 !important; /* Dark text for readability */
-        }
-
-        /* Padding between the 'Filas' and 'Total' badges */
-        .badge-total {
-            margin-left: 10px !important; /* Further reduced margin for closer proximity */
-            background-color: #a5d6a7 !important; /* A soft green, matching 'Guardar' for consistency */
-            color: #212529 !important; /* Dark text for readability */
-        }
-
-        /* Estilos para el botón Exportar a Excel */
-        .btn-exportar {
-            background-color: #d0f0c0 !important;
-            border-color: #b2e2a4 !important;
-            color: #212529 !important;
-            border-top-right-radius: 0.375rem !important; /* Rounded right corners */
-            border-bottom-right-radius: 0.375rem !important; /* Rounded right corners */
-            border-top-left-radius: 0 !important; /* Ensure square left corner */
-            border-bottom-left-radius: 0 !important; /* Ensure square left corner */
-        }
-
-            .btn-exportar:hover {
-                background-color: #b9ddb1 !important;
-                border-color: #a0d294 !important;
-                color: #212529 !important;
-            }
-
-
-        /* Estilos para los botones del modal de exportación */
-        .custom-modal-btn {
-            transition: all 0.3s ease;
-        }
-
-            .custom-modal-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-    </style>
 }

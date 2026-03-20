@@ -1,0 +1,140 @@
+﻿@page
+@model CDC.ProyeccionVentas.FrontEnd.Pages.ProgramarPedidosSucursalesModel
+@{
+    ViewData["Title"] = "Programar pedidos por sucursal";
+    ViewData["ShowSidebar"] = true;
+    ViewData["HtmlClass"] = "programacion-screen-page";
+    ViewData["BodyClass"] = "programacion-screen-page";
+    ViewData["AppContainerClass"] = "app-container-programacion-screen";
+    ViewData["MainContentClass"] = "main-content-area-programacion-screen";
+    ViewData["MainBodyClass"] = "main-body-programacion";
+    ViewData["PageFrameClass"] = "page-frame-programacion";
+    var matriz = Model.Matriz ?? new List<CDC.ProyeccionVentas.Dominio.Entidades.CalendarioMatrizRow>();
+    var totalSucursales = matriz.Count;
+}
+
+<div class="screen-shell programar-pedidos-shell">
+    <section class="screen-card screen-card-header screen-card-header-compact programar-pedidos-header">
+        <div class="screen-title-row programar-pedidos-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+            <span id="mensajeDinamico" class="page-status-message programar-pedidos-status" aria-live="polite"></span>
+        </div>
+    </section>
+
+    <form id="af-form" method="post" style="display:none;">@Html.AntiForgeryToken()</form>
+
+    <section class="screen-card screen-card-actions">
+        <div class="d-flex align-items-center mb-3" id="botonera">
+            <div class="btn-group align-items-center">
+                <button type="button" class="btn btn-primary custom-btn-effect btn-recargar" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Refrescar
+                </button>
+
+                <span class="badge bg-info text-dark fs-6 py-2 px-3 align-self-center badge-filas ms-3">
+                    Sucursales: <span id="sucursalesCount">@totalSucursales</span>
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen-card screen-card-table">
+        <div class="table-responsive-scroll">
+            <table class="table table-bordered table-striped mt-2 schedule-table" id="tablaMatriz">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="col-sucursal schedule-store-cell">Sucursal</th>
+                        <th class="col-dia text-center schedule-day-head">Lunes</th>
+                        <th class="col-dia text-center schedule-day-head">Martes</th>
+                        <th class="col-dia text-center schedule-day-head">Miércoles</th>
+                        <th class="col-dia text-center schedule-day-head">Jueves</th>
+                        <th class="col-dia text-center schedule-day-head">Viernes</th>
+                        <th class="col-dia text-center schedule-day-head">Sábado</th>
+                        <th class="col-dia text-center schedule-day-head">Domingo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in matriz)
+                    {
+                        <tr data-store-no="@r.StoreNo">
+                            <td class="col-sucursal schedule-store-cell">@r.StoreNo — @r.StoreName</td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="1" @(r.Lunes == 1 ? "checked" : null) /></td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="2" @(r.Martes == 1 ? "checked" : null) /></td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="3" @(r.Miercoles == 1 ? "checked" : null) /></td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="4" @(r.Jueves == 1 ? "checked" : null) /></td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="5" @(r.Viernes == 1 ? "checked" : null) /></td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="6" @(r.Sabado == 1 ? "checked" : null) /></td>
+                            <td class="text-center col-dia schedule-day-cell"><input type="checkbox" class="form-check-input" data-dia="7" @(r.Domingo == 1 ? "checked" : null) /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        let messageTimeoutId = null;
+        const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+        const msg = (tipo, texto) => {
+          const c = document.getElementById("mensajeDinamico");
+          if (messageTimeoutId) {
+            clearTimeout(messageTimeoutId);
+            messageTimeoutId = null;
+          }
+
+          c.textContent = texto;
+          c.className = `page-status-message programar-pedidos-status is-${tipo}`;
+
+          if (tipo !== 'danger') {
+            messageTimeoutId = setTimeout(() => {
+              c.textContent = "";
+              c.className = "page-status-message programar-pedidos-status";
+              messageTimeoutId = null;
+            }, 3000);
+          }
+        };
+
+        async function toggleDia(chk){
+          const tr = chk.closest('tr');
+          const payload = {
+            storeNo: tr.dataset.storeNo,
+            diaSemanaIso: Number(chk.dataset.dia),
+            marcado: chk.checked
+          };
+
+          chk.disabled = true;
+          try{
+            const r = await fetch(`@Url.Page("ProgramarPedidosSucursales", "Toggle")`, {
+              method:'POST',
+              headers: { 'Content-Type':'application/json', 'RequestVerificationToken': token() },
+              body: JSON.stringify(payload)
+            });
+            if(!r.ok) throw new Error(`HTTP ${r.status}`);
+            const row = await r.json();
+
+            const map = {
+              1: +row.lunes === 1, 2: +row.martes === 1, 3: +row.miercoles === 1, 4: +row.jueves === 1,
+              5: +row.viernes === 1, 6: +row.sabado === 1, 7: +row.domingo === 1
+            };
+            [1,2,3,4,5,6,7].forEach(d=>{
+              const c = tr.querySelector(`input[data-dia="${d}"]`);
+              if(c) c.checked = !!map[d];
+            });
+
+            msg('success','Guardado.');
+          }catch(e){
+            chk.checked = !chk.checked;
+            msg('danger', `No se pudo guardar: ${e.message}`);
+          }finally{
+            chk.disabled = false;
+          }
+        }
+
+        document.querySelectorAll('#tablaMatriz input[type="checkbox"]').forEach(chk=>{
+          chk.addEventListener('change', ()=>toggleDia(chk));
+        });
+    </script>
+
+}
