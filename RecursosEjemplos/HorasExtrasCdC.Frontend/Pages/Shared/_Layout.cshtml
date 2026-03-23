@@ -1,0 +1,63 @@
+@{
+    var useLegacyDateRangePicker = ViewData["UseLegacyDateRangePicker"] as bool? ?? false;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - HorasExtrasCdC.Frontend</title>
+    <link rel="stylesheet" href="/css/site.css" />
+    @if (useLegacyDateRangePicker)
+    {
+        <link rel="stylesheet" href="/vendor/daterangepicker/daterangepickerstyle.css" />
+    }
+</head>
+<body class="app-body @(ViewData["BodyClass"] as string)">
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <header class="border-bottom shadow-sm app-header">
+        <nav class="navbar container py-2">
+            <div class="top-nav-left">
+                <a class="navbar-brand" asp-page="/Index">
+                    <img
+                        class="brand-logo"
+                        src="/_asset/header-logo"
+                        alt="Casa del Cafe" />
+                </a>
+            </div>
+
+            <div class="top-nav-right">
+                <span class="badge text-bg-light border">Usuario: @(User.FindFirst("nombreUsuario")?.Value ?? User.FindFirst("numeroEmpleado")?.Value)</span>
+                <span class="badge text-bg-light border">Empleado: @(User.FindFirst("nombreEmpleado")?.Value ?? User.FindFirst("numeroEmpleado")?.Value)</span>
+                <span class="badge text-bg-primary">Rol: @User.FindFirst("rolPrincipal")?.Value</span>
+                <a class="btn btn-outline-danger btn-sm" asp-page="/Logout">Salir</a>
+            </div>
+        </nav>
+    </header>
+}
+
+<main class="container py-4 @(ViewData["MainClass"] as string)">
+    @RenderBody()
+</main>
+
+<footer class="app-footer">
+    <div class="container footer-content">
+        <span class="footer-brand">Casa del Cafe</span>
+        <span class="footer-sep">|</span>
+        <span>Todos los derechos reservados</span>
+        <span class="footer-sep">|</span>
+        <span>@DateTime.Now.Year</span>
+    </div>
+</footer>
+
+@if (useLegacyDateRangePicker)
+{
+    <script src="/vendor/daterangepicker/jquery-3.1.0.min.js"></script>
+    <script src="/vendor/daterangepicker/moment.min.js"></script>
+    <script src="/vendor/daterangepicker/daterangepicker.js"></script>
+}
+<script src="/js/site.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

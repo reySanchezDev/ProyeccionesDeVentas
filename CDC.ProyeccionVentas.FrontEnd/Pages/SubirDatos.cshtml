@@ -2,181 +2,77 @@
 @model SubirDatosModel
 @{
     ViewData["Title"] = "Subir Proyección de Ventas";
+    ViewData["ShowSidebar"] = true;
+    ViewData["HtmlClass"] = "upload-screen-page";
+    ViewData["BodyClass"] = "upload-screen-page";
+    ViewData["AppContainerClass"] = "app-container-upload-screen";
+    ViewData["MainContentClass"] = "main-content-area-upload-screen";
+    ViewData["MainBodyClass"] = "main-body-upload-screen";
+    ViewData["PageFrameClass"] = "page-frame-upload-screen";
 }
 
-<style>
-    /* Estilos personalizados para el input de archivo */
-    .custom-btn-effect {
-        transition: all 0.3s ease;
-    }
+<div class="screen-shell upload-screen-shell">
+    <section class="screen-card screen-card-header screen-card-header-compact">
+        <div class="screen-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+        </div>
+    </section>
 
-        .custom-btn-effect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-    .input-verde {
-        border-color: #28a745 !important;
-        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
-    }
-
-    /* Estilos para el diálogo de confirmación personalizado */
-    .custom-confirm-dialog {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1050; /* Por encima de otros modales si los hay */
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease-in-out;
-    }
-
-        .custom-confirm-dialog.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-    .custom-confirm-content {
-        background-color: white;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        max-width: 400px;
-        width: 90%;
-        animation: fadeInScale 0.3s ease-out;
-    }
-
-    .custom-confirm-message {
-        margin-bottom: 25px;
-        font-size: 1.1em;
-        color: #333;
-    }
-
-    .custom-confirm-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-    }
-
-        /* Estilos específicos para los botones de Aceptar y Cancelar del diálogo */
-        .custom-confirm-buttons .btn-confirm-cancel {
-            background-color: #dc3545; /* Rojo para cancelar */
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-        }
-
-            .custom-confirm-buttons .btn-confirm-cancel:hover {
-                background-color: #c82333; /* Rojo más oscuro al pasar el ratón */
-                transform: translateY(-1px);
-            }
-
-        .custom-confirm-buttons .btn-confirm-accept {
-            background-color: #28a745; /* Verde elegante para aceptar */
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-        }
-
-            .custom-confirm-buttons .btn-confirm-accept:hover {
-                background-color: #218838; /* Verde más oscuro al pasar el ratón */
-                transform: translateY(-1px);
-            }
-
-    /* Otros estilos (de tu código original o Bootstrap si los tienes) */
-    .scroll-tabla-preview {
-        max-height: 500px; /* Altura máxima para la tabla de vista previa */
-        overflow-y: auto; /* Habilita el scroll vertical */
-        border: 1px solid #dee2e6; /* Borde para la tabla */
-    }
-
-    .table th, .table td {
-        white-space: nowrap; /* Evita que el texto se envuelva en las celdas */
-    }
-</style>
-
-<h2>Subir Proyección de Ventas</h2>
-
-<div id="formSubirDatos">
-    <div class="mb-3">
-        <label for="excelInput" class="form-label">Seleccionar archivo Excel:</label>
-        <input type="file" class="form-control custom-btn-effect"
-               id="excelInput" accept=".xlsx,.xls,.xlsm,.csv" />
-    </div>
-    <div class="sticky-top bg-white pt-1" id="stickyBotonera" style="z-index:100;">
-        <div class="d-flex align-items-center gap-2 mb-3" id="botonera">
-            <a asp-page="/Principal" class="btn custom-btn-effect border d-inline-flex align-items-center regresar-btn">
-                <i class="bi bi-house-door-fill fs-5 me-1"></i> Menú principal
-            </a>
-            <button type="button" class="btn custom-btn-effect btn-secondary" id="btnLimpiarTodo">
-                <i class="bi bi-eraser-fill me-1"></i> Limpiar todo
-            </button>
-            <button type="button" class="btn custom-btn-effect btn-primary" id="btnLeerExcel">
-                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Leer archivo
-            </button>
-            <button type="button" class="btn custom-btn-effect btn-danger d-none" id="btnLimpiarDatos">
-                <i class="bi bi-x-circle-fill me-1"></i> Limpiar datos inválidos
-            </button>
-            <button type="button" class="btn custom-btn-effect btn-success d-none" id="btnGuardar">
-                <i class="bi bi-database-check me-1"></i> Guardar en BD
-            </button>
-            <span class="badge bg-secondary ms-2 d-none" id="badgeNumFilas"></span>
-            <span class="badge bg-success ms-1 d-none" id="badgeSumaMonto"></span>
+    <div id="formSubirDatos" class="screen-card screen-card-form">
+        <div class="mb-3">
+            <label for="excelInput" class="form-label">Seleccionar archivo Excel:</label>
+            <input type="file" class="form-control custom-btn-effect"
+                   id="excelInput" accept=".xlsx,.xls,.xlsm,.csv" />
         </div>
 
-        <div id="mensaje" class="mt-2"></div>
-    </div>
-</div>
+        <div class="sticky-top toolbar-sticky screen-toolbar" id="stickyBotonera">
+            <div class="d-flex align-items-center gap-2 mb-3" id="botonera">
+                <button type="button" class="btn custom-btn-effect btn-secondary" id="btnLimpiarTodo">
+                    <i class="bi bi-eraser-fill me-1"></i> Limpiar todo
+                </button>
+                <button type="button" class="btn custom-btn-effect btn-primary" id="btnLeerExcel">
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Leer archivo
+                </button>
+                <button type="button" class="btn custom-btn-effect btn-danger d-none" id="btnLimpiarDatos">
+                    <i class="bi bi-x-circle-fill me-1"></i> Limpiar datos inválidos
+                </button>
+                <button type="button" class="btn custom-btn-effect btn-success d-none" id="btnGuardar">
+                    <i class="bi bi-database-check me-1"></i> Guardar en BD
+                </button>
+                <span class="badge bg-secondary ms-2 d-none" id="badgeNumFilas"></span>
+                <span class="badge bg-success ms-1 d-none" id="badgeSumaMonto"></span>
+            </div>
 
-<div class="my-3 d-none" id="progressContainer">
-    <div class="progress" style="height: 26px;">
-        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
-             role="progressbar" style="width:0%">
-            Procesando...
+            <div id="mensaje" class="screen-inline-message mt-2"></div>
         </div>
     </div>
-    <div class="text-end mt-1 small" id="progressInfo"></div>
-</div>
 
-<hr style="margin-top:8px;" />
+    <div class="my-2 d-none screen-card screen-card-progress" id="progressContainer">
+        <div class="progress screen-progress-bar">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                 role="progressbar" style="width:0%">
+                Procesando...
+            </div>
+        </div>
+        <div class="text-end mt-2 small" id="progressInfo"></div>
+    </div>
 
-<div id="preview" style="display:none;">
-    <h4 class="bg-white pt-2 mb-0 border-bottom shadow-sm" style="z-index:1; position:sticky; top:72px;">
-        Vista previa de datos
-    </h4>
-    <div class="scroll-tabla-preview bg-white">
-        <table class="table table-bordered" id="tablaPreview">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Sucursal</th>
-                    <th>Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+    <div id="preview" class="screen-card screen-card-table" style="display:none;">
+        <h4 class="upload-preview-title">Vista previa de datos</h4>
+        <div class="scroll-tabla-preview">
+            <table class="table table-bordered" id="tablaPreview">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Sucursal</th>
+                        <th>Monto</th>
+                        <th>Ticket Promedio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -206,22 +102,40 @@
         let datosExcel = [];
         // Almacena los detalles de las filas con formato inválido
         let indicesInvalidos = [];
+        let mensajeTimeoutId = null;
 
         // Función para mostrar mensajes de alerta
-        function mostrarMensaje(htmlContent) {
-            document.getElementById('mensaje').innerHTML = htmlContent;
+        function mostrarMensaje(htmlContent, duracionMs = 4000) {
+            const mensajeContainer = document.getElementById('mensaje');
+
+            if (mensajeTimeoutId) {
+                window.clearTimeout(mensajeTimeoutId);
+                mensajeTimeoutId = null;
+            }
+
+            mensajeContainer.innerHTML = htmlContent;
+
+            if (!htmlContent || duracionMs <= 0) {
+                return;
+            }
+
+            mensajeTimeoutId = window.setTimeout(() => {
+                mensajeContainer.innerHTML = '';
+                mensajeTimeoutId = null;
+            }, duracionMs);
         }
 
         // Función para mostrar mensajes de error de formato de Excel
         function mostrarErrorFormato(msg) {
-            document.getElementById('mensaje').innerHTML = `
+            mostrarMensaje(`
                 <div class="alert alert-danger">
                     <strong>Error de formato:</strong> ${msg}
                     <hr>
                     <b>Formato correcto:</b><br>
                     - Hoja llamada 'subir'<br>
-                    - 3 columnas: Fecha, Sucursal, Monto
-                </div>`;
+                    - 4 columnas obligatorias: Fecha, Sucursal, Monto, TicketPromedio<br>
+                    - TicketPromedio puede venir vacío o con un entero mayor o igual a cero
+                </div>`);
         }
 
         // Función para limpiar toda la interfaz y datos
@@ -411,6 +325,10 @@
                     rowData.Monto != null
                         ? rowData.Monto.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : '';
+                row.insertCell().textContent =
+                    rowData.TicketPromedio != null
+                        ? rowData.TicketPromedio
+                        : '';
             });
         }
 
@@ -496,10 +414,14 @@
 
                     // Asume que la primera fila de jsonData es el encabezado
                     const headers = jsonData[0].map(h => String(h).trim()); // Normaliza los encabezados
+                    const headerAliasMap = {
+                        "Ticket Promedio": "TicketPromedio"
+                    };
+                    const normalizedHeaders = headers.map(h => headerAliasMap[h] || h);
 
                     // Validar que los encabezados esperados estén presentes
-                    const requiredHeaders = ["Fecha", "Sucursal", "Monto"];
-                    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+                    const requiredHeaders = ["Fecha", "Sucursal", "Monto", "TicketPromedio"];
+                    const missingHeaders = requiredHeaders.filter(h => !normalizedHeaders.includes(h));
 
                     if (missingHeaders.length > 0) {
                         limpiarTodo(); // Limpia la interfaz
@@ -518,35 +440,76 @@
                         let rowIsValid = true; // Bandera para esta fila
                         let currentRowErrors = []; // Almacenará los detalles del error para esta fila
 
-                        headers.forEach((header, index) => {
+                        headers.forEach((rawHeader, index) => {
+                            const header = headerAliasMap[String(rawHeader).trim()] || String(rawHeader).trim();
                             let value = row[index]; // Valor de la celda
-                            switch (String(header).trim()) {
-                                case "Fecha":
-                                    if (typeof value === 'number') {
-                                        const excelDate = new Date(Date.UTC(1899, 11, 30));
-                                        excelDate.setDate(excelDate.getDate() + value);
-                                        obj[header] = excelDate.toISOString().split('T')[0];
-                                    } else if (typeof value === 'string') {
-                                        try {
-                                            const date = new Date(value);
-                                            if (!isNaN(date.getTime())) {
-                                                obj[header] = date.toISOString().split('T')[0];
-                                            } else {
-                                                obj[header] = null;
-                                                rowIsValid = false;
-                                                currentRowErrors.push('Fecha inválida');
-                                            }
-                                        } catch (e) {
-                                            obj[header] = null;
-                                            rowIsValid = false;
-                                            currentRowErrors.push('Fecha inválida');
-                                        }
-                                    } else {
-                                        obj[header] = null;
-                                        rowIsValid = false;
-                                        currentRowErrors.push('Fecha faltante o tipo incorrecto');
-                                    }
-                                    break;
+                            switch (header) {
+                                    case "Fecha":
+        if (typeof value === 'number') {
+            const parsed = XLSX.SSF.parse_date_code(value);
+            if (parsed) {
+                const y = parsed.y, m = parsed.m.toString().padStart(2, '0'), d = parsed.d.toString().padStart(2, '0');
+                obj[header] = `${y}-${m}-${d}`;
+            } else {
+                obj[header] = null;
+                rowIsValid = false;
+                currentRowErrors.push('Fecha inválida (número mal interpretado)');
+            }
+        } else if (typeof value === 'string') {
+            try {
+                // Evita usar new Date(value).toISOString() para no depender del huso horario
+                const parts = value.split(/[-/]/);
+                if (parts.length === 3) {
+                    const y = parts[0].padStart(4, '0');
+                    const m = parts[1].padStart(2, '0');
+                    const d = parts[2].padStart(2, '0');
+                    obj[header] = `${y}-${m}-${d}`;
+                } else {
+                    obj[header] = null;
+                    rowIsValid = false;
+                    currentRowErrors.push('Fecha inválida (formato incorrecto)');
+                }
+            } catch (e) {
+                obj[header] = null;
+                rowIsValid = false;
+                currentRowErrors.push('Fecha inválida');
+            }
+        } else {
+            obj[header] = null;
+            rowIsValid = false;
+            currentRowErrors.push('Fecha faltante o tipo incorrecto');
+        }
+        break;
+
+                                // case "Fecha":
+                                //     if (typeof value === 'number') {
+                                //         const excelDate = new Date(Date.UTC(1899, 11, 30));
+                                //         excelDate.setDate(excelDate.getDate() + value);
+                                //         obj[header] = excelDate.toISOString().split('T')[0];
+                                //     } else if (typeof value === 'string') {
+                                //         try {
+                                //             const date = new Date(value);
+                                //             if (!isNaN(date.getTime())) {
+                                //                 obj[header] = date.toISOString().split('T')[0];
+                                //             } else {
+                                //                 obj[header] = null;
+                                //                 rowIsValid = false;
+                                //                 currentRowErrors.push('Fecha inválida');
+                                //             }
+                                //         } catch (e) {
+                                //             obj[header] = null;
+                                //             rowIsValid = false;
+                                //             currentRowErrors.push('Fecha inválida');
+                                //         }
+                                //     } else {
+                                //         obj[header] = null;
+                                //         rowIsValid = false;
+                                //         currentRowErrors.push('Fecha faltante o tipo incorrecto');
+                                //     }
+                                //     break;
+
+
+
                                     case "Monto":
         obj[header] = parseFloat(value);
         if (isNaN(obj[header])) {
@@ -558,6 +521,33 @@
             currentRowErrors.push('Monto negativo no permitido');
         }
         break;
+
+                                case "TicketPromedio":
+                                    {
+                                        const valorTexto = value == null ? '' : String(value).trim();
+                                        if (!valorTexto) {
+                                            obj[header] = null;
+                                            break;
+                                        }
+
+                                        const valorNormalizado = Number(valorTexto.replace(",", "."));
+                                        if (!Number.isFinite(valorNormalizado)) {
+                                            obj[header] = null;
+                                            rowIsValid = false;
+                                            currentRowErrors.push('TicketPromedio inválido');
+                                        } else if (!Number.isInteger(valorNormalizado)) {
+                                            obj[header] = null;
+                                            rowIsValid = false;
+                                            currentRowErrors.push('TicketPromedio debe ser entero');
+                                        } else if (valorNormalizado < 0) {
+                                            obj[header] = null;
+                                            rowIsValid = false;
+                                            currentRowErrors.push('TicketPromedio debe ser mayor o igual que cero');
+                                        } else {
+                                            obj[header] = valorNormalizado;
+                                        }
+                                    }
+                                    break;
 
                                 case "Sucursal":
                                     obj["CodSucursal"] = String(value).trim();
@@ -602,7 +592,7 @@
 
                     if (datosExcel.length === 0) {
                         limpiarTodo(); // Limpia la interfaz
-                        mostrarMensaje('<div class="alert alert-warning">No se encontraron datos válidos en el archivo después del procesamiento. Verifique los encabezados (Fecha, Sucursal, Monto) y el formato de los datos.</div>');
+                        mostrarMensaje('<div class="alert alert-warning">No se encontraron datos válidos en el archivo después del procesamiento. Verifique los encabezados (Fecha, Sucursal, Monto y TicketPromedio) y el formato de los datos.</div>');
                         document.getElementById('progressContainer').classList.add('d-none');
                         return;
                     }
@@ -614,7 +604,7 @@
                     if (isValid) {
                         mostrarMensaje('<div class="alert alert-success">Archivo leído y validado con éxito.</div>');
                         actualizarTablaPreview(datosExcel); // Solo muestra la vista previa si todo es válido
-                        document.getElementById('preview').style.display = 'block'; // <--- HACE VISIBLE LA VISTA PREVIA
+                        document.getElementById('preview').style.display = 'flex'; // <--- HACE VISIBLE LA VISTA PREVIA
                         actualizarContadoresYBotones(); // Actualiza contadores y botones después de la validación exitosa
                     } else {
                         // El mensaje de error ya se muestra dentro de las funciones de validación (si fallan)
@@ -705,7 +695,8 @@
                         body: JSON.stringify(datosExcel.map(d => ({
                             fecha: d.Fecha,
                             codSucursal: d.CodSucursal,
-                            monto: d.Monto
+                            monto: d.Monto,
+                            ticketPromedio: d.TicketPromedio ?? null
                         })))
                     });
 

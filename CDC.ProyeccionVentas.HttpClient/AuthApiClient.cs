@@ -42,7 +42,7 @@ namespace CDC.ProyeccionVentas.HttpClients.Auth
         private class LoginApiResponse
         {
             public bool success { get; set; }
-            public string message { get; set; }
+            public string? message { get; set; }
         }
     }
 }

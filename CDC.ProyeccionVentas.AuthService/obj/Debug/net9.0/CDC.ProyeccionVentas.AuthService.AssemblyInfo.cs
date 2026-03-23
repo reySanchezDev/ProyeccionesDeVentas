@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CDC.ProyeccionVentas.AuthService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12757974b03f07d12c46279077243c3481b07a3d")]
 [assembly: System.Reflection.AssemblyProductAttribute("CDC.ProyeccionVentas.AuthService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CDC.ProyeccionVentas.AuthService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

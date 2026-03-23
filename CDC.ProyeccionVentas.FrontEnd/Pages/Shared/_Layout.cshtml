@@ -49,53 +49,94 @@
 
                 <div class="sidebar-body">
                     <div class="sidebar-nav-shell">
-                        <ul class="nav flex-column">
-                            <li class="nav-item">
-                                <a class="nav-link@(isSubirDatos ? " is-active" : string.Empty)"
-                                   asp-page="/SubirDatos"
-                                   title="Subir Proyeccion de Ventas"
-                                   aria-current="@(isSubirDatos ? "page" : null)">
-                                    <i class="bi bi-cloud-arrow-up"></i>
-                                    <span>Subir Proyección de Ventas</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link@(isSubirTicketStaff ? " is-active" : string.Empty)"
-                                   asp-page="/SubirTicketStaff"
-                                   title="Subir Ticket Promedio Staff"
-                                   aria-current="@(isSubirTicketStaff ? "page" : null)">
-                                    <i class="bi bi-people"></i>
-                                    <span>Subir Ticket Promedio Staff</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link@(isConsultaTicketStaff ? " is-active" : string.Empty)"
-                                   asp-page="/ConsultaTicketStaff"
-                                   title="Consultar Ticket Promedio Staff"
-                                   aria-current="@(isConsultaTicketStaff ? "page" : null)">
-                                    <i class="bi bi-search-heart"></i>
-                                    <span>Consultar Ticket Promedio Staff</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link@(isProgramacion ? " is-active" : string.Empty)"
-                                   asp-page="/ProgramarPedidosSucursales"
-                                   title="Programar pedidos por sucursal"
-                                   aria-current="@(isProgramacion ? "page" : null)">
-                                    <i class="bi bi-calendar-week"></i>
-                                    <span>Programar pedidos por sucursal</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link@(isConsulta ? " is-active" : string.Empty)"
-                                   asp-page="/ConsultaProyecciones"
-                                   title="Consultar Proyecciones"
-                                   aria-current="@(isConsulta ? "page" : null)">
-                                    <i class="bi bi-search"></i>
-                                    <span>Consultar Proyecciones</span>
-                                </a>
-                            </li>
-                        </ul>
+                        <div class="sidebar-nav-groups">
+                            <section class="sidebar-nav-group" data-nav-group data-group-key="proyecciones-ventas" data-group-default-open="false">
+                                <button type="button"
+                                        class="sidebar-group-toggle"
+                                        id="grupo-proyecciones"
+                                        data-nav-group-toggle
+                                        aria-expanded="true"
+                                        aria-controls="grupo-proyecciones-opciones">
+                                    <span class="sidebar-group-title">Proyecciones de Ventas</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <ul class="nav flex-column" id="grupo-proyecciones-opciones" data-nav-group-panel>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isSubirDatos ? " is-active" : string.Empty)"
+                                           asp-page="/SubirDatos"
+                                           title="Subir Proyeccion"
+                                           aria-current="@(isSubirDatos ? "page" : null)">
+                                            <i class="bi bi-cloud-arrow-up"></i>
+                                            <span>Subir Proyección</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isConsulta ? " is-active" : string.Empty)"
+                                           asp-page="/ConsultaProyecciones"
+                                           title="Consultar Proyecciones"
+                                           aria-current="@(isConsulta ? "page" : null)">
+                                            <i class="bi bi-search"></i>
+                                            <span>Consultar Proyecciones</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </section>
+
+                            <section class="sidebar-nav-group" data-nav-group data-group-key="ticket-promedio-staff" data-group-default-open="false">
+                                <button type="button"
+                                        class="sidebar-group-toggle"
+                                        id="grupo-ticket-staff"
+                                        data-nav-group-toggle
+                                        aria-expanded="true"
+                                        aria-controls="grupo-ticket-staff-opciones">
+                                    <span class="sidebar-group-title">Ticket Promedio Por Staff</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <ul class="nav flex-column" id="grupo-ticket-staff-opciones" data-nav-group-panel>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isSubirTicketStaff ? " is-active" : string.Empty)"
+                                           asp-page="/SubirTicketStaff"
+                                           title="Subir Tickets"
+                                           aria-current="@(isSubirTicketStaff ? "page" : null)">
+                                            <i class="bi bi-receipt-cutoff"></i>
+                                            <span>Subir Tickets</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isConsultaTicketStaff ? " is-active" : string.Empty)"
+                                           asp-page="/ConsultaTicketStaff"
+                                           title="Consultar Tickets"
+                                           aria-current="@(isConsultaTicketStaff ? "page" : null)">
+                                            <i class="bi bi-search-heart"></i>
+                                            <span>Consultar Tickets</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </section>
+
+                            <section class="sidebar-nav-group sidebar-nav-group-standalone" data-nav-group data-group-key="programar-pedidos-sucursal" data-group-default-open="false">
+                                <button type="button"
+                                        class="sidebar-group-toggle"
+                                        id="grupo-programacion"
+                                        data-nav-group-toggle
+                                        aria-expanded="true"
+                                        aria-controls="grupo-programacion-opciones">
+                                    <span class="sidebar-group-title">Programar Pedidos</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <ul class="nav flex-column" id="grupo-programacion-opciones" data-nav-group-panel>
+                                    <li class="nav-item">
+                                        <a class="nav-link sidebar-nav-link-standalone@(isProgramacion ? " is-active" : string.Empty)"
+                                           asp-page="/ProgramarPedidosSucursales"
+                                           title="Programar pedidos por sucursal"
+                                           aria-current="@(isProgramacion ? "page" : null)">
+                                            <i class="bi bi-calendar-week"></i>
+                                            <span>Por Sucursales</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </section>
+                        </div>
                     </div>
 
                     @if (User.Identity?.IsAuthenticated == true)

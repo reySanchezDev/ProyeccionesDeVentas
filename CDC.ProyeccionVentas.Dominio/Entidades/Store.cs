@@ -8,7 +8,7 @@ namespace CDC.ProyeccionVentas.Dominio.Entidades
 {
     public class Store
     {
-        public string No { get; set; }
-        public string StoreNo { get; set; }
+        public string No { get; set; } = string.Empty;
+        public string StoreNo { get; set; } = string.Empty;
     }
 }

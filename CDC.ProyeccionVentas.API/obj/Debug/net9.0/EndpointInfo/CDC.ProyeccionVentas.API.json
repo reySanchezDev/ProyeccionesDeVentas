@@ -36,6 +36,49 @@
         }
       }
     },
+    "/api/Calendario": {
+      "get": {
+        "tags": [
+          "Calendario"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Calendario/dia": {
+      "post": {
+        "tags": [
+          "Calendario"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDiaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDiaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDiaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/ProyeccionVentas/insertar-masivo": {
       "post": {
         "tags": [
@@ -173,6 +216,37 @@
         }
       }
     },
+    "/api/ProyeccionVentasConsulta/eliminar": {
+      "post": {
+        "tags": [
+          "ProyeccionVentasConsulta"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminarProyeccionVentasRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminarProyeccionVentasRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminarProyeccionVentasRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Stores": {
       "get": {
         "tags": [
@@ -204,6 +278,320 @@
                   "items": {
                     "$ref": "#/components/schemas/Store"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/TicketStaff/descargar-staff": {
+      "get": {
+        "tags": [
+          "TicketStaff"
+        ],
+        "parameters": [
+          {
+            "name": "numeroSupervisor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffDownloadItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffDownloadItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffDownloadItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/TicketStaff/validar-carga": {
+      "post": {
+        "tags": [
+          "TicketStaff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TicketStaffBulkUploadItem"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TicketStaffBulkUploadItem"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TicketStaffBulkUploadItem"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffExistingItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffExistingItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffExistingItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/TicketStaff/insertar-masivo": {
+      "post": {
+        "tags": [
+          "TicketStaff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffBulkUploadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffBulkUploadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffBulkUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffBulkUploadResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffBulkUploadResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffBulkUploadResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/TicketStaff/consultar": {
+      "post": {
+        "tags": [
+          "TicketStaff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffConsultaFilter"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffConsultaFilter"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffConsultaFilter"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketStaffItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/TicketStaff/guardar": {
+      "post": {
+        "tags": [
+          "TicketStaff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffSaveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffSaveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffSaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffSaveResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffSaveResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffSaveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/TicketStaff/eliminar-mes": {
+      "post": {
+        "tags": [
+          "TicketStaff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffDeleteMonthRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffDeleteMonthRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffDeleteMonthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffDeleteMonthResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffDeleteMonthResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketStaffDeleteMonthResult"
                 }
               }
             }
@@ -315,6 +703,25 @@
           "monto": {
             "type": "number",
             "format": "double"
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EliminarProyeccionVentasRequest": {
+        "type": "object",
+        "properties": {
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -333,6 +740,30 @@
           "codSucursal": {
             "type": "string",
             "nullable": true
+          },
+          "codSucursales": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuardarDiaRequest": {
+        "type": "object",
+        "properties": {
+          "storeNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "diaSemanaIso": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "marcado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -365,6 +796,11 @@
           "monto": {
             "type": "number",
             "format": "double"
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -387,6 +823,11 @@
           "monto": {
             "type": "number",
             "format": "double"
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -399,6 +840,207 @@
             "nullable": true
           },
           "storeNo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffBulkUploadItem": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "numeroEmpleado": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreStaff": {
+            "type": "string",
+            "nullable": true
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffBulkUploadRequest": {
+        "type": "object",
+        "properties": {
+          "codigoEmpleadoAccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketStaffBulkUploadItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffBulkUploadResult": {
+        "type": "object",
+        "properties": {
+          "registrosInsertados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffConsultaFilter": {
+        "type": "object",
+        "properties": {
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "numeroEmpleado": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffDeleteMonthRequest": {
+        "type": "object",
+        "properties": {
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffDeleteMonthResult": {
+        "type": "object",
+        "properties": {
+          "registrosEliminados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffDownloadItem": {
+        "type": "object",
+        "properties": {
+          "numeroEmpleado": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreStaff": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffExistingItem": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "numeroEmpleado": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "numeroEmpleado": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreStaff": {
+            "type": "string",
+            "nullable": true
+          },
+          "existeEnCDC": {
+            "type": "boolean"
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffSaveRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigoEmpleadoAccion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketStaffSaveResponse": {
+        "type": "object",
+        "properties": {
+          "accion": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ticketPromedio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ultimoValorTicketPromedio": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "mensaje": {
             "type": "string",
             "nullable": true
           }

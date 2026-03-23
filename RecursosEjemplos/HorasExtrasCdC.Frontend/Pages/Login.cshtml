@@ -1,0 +1,40 @@
+@page
+@model HorasExtrasCdC.Frontend.Pages.LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="auth-shell login-shell">
+    <div class="auth-grid auth-grid-single">
+        <section class="auth-panel">
+            <div class="login-logo-wrap">
+                <div class="login-logo-ring">
+                    <img class="login-logo-round" src="~/resources/Logo.bmp" alt="Casa del Cafe" />
+                </div>
+            </div>
+            <div class="card auth-card">
+                <div class="card-body">
+                    <h2 class="h4 auth-form-title">Ingreso</h2>
+                    <p class="text-muted">Use su codigo de empleado y contrasenia para continuar.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
+                    }
+
+                    <form method="post" class="d-grid gap-3" autocomplete="off">
+                        <div>
+                            <label asp-for="NumeroEmpleado" class="form-label">Codigo de empleado</label>
+                            <input asp-for="NumeroEmpleado" class="form-control" inputmode="numeric" autocomplete="username" placeholder="00000000" />
+                        </div>
+                        <div>
+                            <label asp-for="Contrasenia" class="form-label">Contrasenia</label>
+                            <input asp-for="Contrasenia" class="form-control" type="password" autocomplete="current-password" />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

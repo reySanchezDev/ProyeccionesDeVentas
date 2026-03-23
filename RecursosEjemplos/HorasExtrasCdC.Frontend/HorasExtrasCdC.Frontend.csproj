@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0-prod</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot/resources/logo-dark.png">
+      <LogicalName>HorasExtrasCdC.Frontend.BrandAssets.HeaderLogoDark</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot/js/site.js">
+      <LogicalName>HorasExtrasCdC.Frontend.StaticAssets.Js.Site</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot/js/listado-gh.js">
+      <LogicalName>HorasExtrasCdC.Frontend.StaticAssets.Js.ListadoGh</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot/vendor/daterangepicker/jquery-3.1.0.min.js">
+      <LogicalName>HorasExtrasCdC.Frontend.StaticAssets.Vendor.DateRangePicker.JQuery</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot/vendor/daterangepicker/moment.min.js">
+      <LogicalName>HorasExtrasCdC.Frontend.StaticAssets.Vendor.DateRangePicker.Moment</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot/vendor/daterangepicker/daterangepicker.js">
+      <LogicalName>HorasExtrasCdC.Frontend.StaticAssets.Vendor.DateRangePicker.Plugin</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot/vendor/daterangepicker/daterangepickerstyle.css">
+      <LogicalName>HorasExtrasCdC.Frontend.StaticAssets.Vendor.DateRangePicker.Style</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

@@ -2,7 +2,12 @@
 **/obj/
 .vs/
 .idea/
+.codex_build/
 *.user
+*.rsuser
 *.suo
+*.slnLaunch.user
 *.cache
 *.log
+*.vsidx
+*.dbmdl

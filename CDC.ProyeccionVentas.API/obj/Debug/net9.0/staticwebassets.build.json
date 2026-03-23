@@ -1,12 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "00P/5SfXgY+/peqH4IEBqZM6Y54nC2eAe8FHAGDhZjw=",
-  "Source": "CDC.ProyeccionVentas.API",
-  "BasePath": "_content/CDC.ProyeccionVentas.API",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": [],
-  "Endpoints": []
-}
+{"Version":1,"Hash":"00P/5SfXgY+/peqH4IEBqZM6Y54nC2eAe8FHAGDhZjw=","Source":"CDC.ProyeccionVentas.API","BasePath":"_content/CDC.ProyeccionVentas.API","Mode":"Default","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

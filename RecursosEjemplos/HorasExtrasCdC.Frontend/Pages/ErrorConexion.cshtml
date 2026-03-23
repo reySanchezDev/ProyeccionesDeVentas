@@ -1,0 +1,156 @@
+@page
+@model HorasExtrasCdC.Frontend.Pages.ErrorConexionModel
+@{
+    ViewData["Title"] = "Error de conexion";
+}
+
+<section class="error-connection-shell">
+    <div class="error-connection-layout">
+        <article class="card error-connection-card-pro">
+            <div class="error-connection-hero">
+                <div class="error-connection-illustration-wrap">
+                    <img
+                        class="error-connection-illustration"
+                        src="~/resources/No-conection.png"
+                        alt="Sin conexion" />
+                </div>
+
+                <div class="error-connection-content">
+                    <span class="error-status-pill @Model.TipoCssClass">@Model.TipoEtiqueta</span>
+                    <h1 class="h4 mb-2">@Model.TitleText</h1>
+                    <p class="mb-3">@Model.MessageText</p>
+
+                    @if (Model.Recomendaciones.Count > 0)
+                    {
+                        <div class="error-recommendations">
+                            @foreach (var paso in Model.Recomendaciones)
+                            {
+                                <p class="error-recommendation-item">@paso</p>
+                            }
+                        </div>
+                    }
+
+                    <div class="error-connection-actions">
+                        <a class="btn btn-primary" href="@Model.ReturnUrl">Reintentar</a>
+                        <a class="btn btn-outline-primary" asp-page="/Login">Ir a Login</a>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="card error-tech-card">
+            <div class="card-body">
+                <div class="error-tech-head">
+                    <h2 class="h6">Diagnostico tecnico</h2>
+                    <button type="button" id="btn-copy-diagnostic" class="btn btn-outline-primary btn-sm">Copiar</button>
+                </div>
+
+                <dl class="error-tech-grid" id="error-tech-grid">
+                    <dt>Fecha local</dt>
+                    <dd>@Model.TimestampLocal</dd>
+
+                    <dt>Tipo</dt>
+                    <dd>@Model.TipoEtiqueta</dd>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Codigo))
+                    {
+                        <dt>Codigo</dt>
+                        <dd>@Model.Codigo</dd>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Origen))
+                    {
+                        <dt>Origen</dt>
+                        <dd>@Model.Origen</dd>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Endpoint))
+                    {
+                        <dt>Endpoint API</dt>
+                        <dd>@Model.Endpoint</dd>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Fuente))
+                    {
+                        <dt>Fuente</dt>
+                        <dd>@Model.Fuente</dd>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.TraceId))
+                    {
+                        <dt>TraceId</dt>
+                        <dd>@Model.TraceId</dd>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.DetalleTecnico))
+                    {
+                        <dt>Detalle</dt>
+                        <dd>@Model.DetalleTecnico</dd>
+                    }
+                </dl>
+
+                <p id="copy-diagnostic-status" class="copy-diagnostic-status" hidden>Diagnostico copiado.</p>
+            </div>
+        </article>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+      (function () {
+        var copyButton = document.getElementById("btn-copy-diagnostic");
+        var status = document.getElementById("copy-diagnostic-status");
+        var detailRows = document.querySelectorAll("#error-tech-grid dt, #error-tech-grid dd");
+        if (!copyButton || !detailRows.length) {
+          return;
+        }
+
+        function buildDiagnosticText() {
+          var lines = [];
+          for (var i = 0; i < detailRows.length; i += 2) {
+            var term = detailRows[i];
+            var desc = detailRows[i + 1];
+            if (!term || !desc) {
+              continue;
+            }
+
+            var termText = (term.textContent || "").trim();
+            var descText = (desc.textContent || "").trim();
+            if (!termText || !descText) {
+              continue;
+            }
+
+            lines.push(termText + ": " + descText);
+          }
+
+          var online = typeof navigator !== "undefined" && navigator.onLine === false ? "No" : "Si";
+          lines.push("Navegador online: " + online);
+          lines.push("UserAgent: " + (navigator.userAgent || "N/D"));
+          return lines.join("\n");
+        }
+
+        async function copyDiagnostic() {
+          var text = buildDiagnosticText();
+          if (!text) {
+            return;
+          }
+
+          try {
+            await navigator.clipboard.writeText(text);
+            if (status) {
+              status.hidden = false;
+              window.setTimeout(function () {
+                status.hidden = true;
+              }, 2500);
+            }
+          } catch (_err) {
+            window.prompt("Copie este diagnostico:", text);
+          }
+        }
+
+        copyButton.addEventListener("click", function () {
+          void copyDiagnostic();
+        });
+      })();
+    </script>
+}

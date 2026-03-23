@@ -1,0 +1,193 @@
+@page
+@model HorasExtrasCdC.Frontend.Pages.SuplentesModel
+@{
+    ViewData["Title"] = "Gestion de Suplentes";
+    ViewData["BodyClass"] = "page-supervisor";
+    ViewData["MainClass"] = "page-supervisor-main";
+}
+
+<section class="supervisor-shell suplente-shell">
+    <div class="d-flex justify-content-between align-items-center mb-2 suplente-page-head">
+        <h1 class="h4">Gestion de Suplentes</h1>
+        <a asp-page="/ListadoxSupervisor" class="btn btn-outline-primary btn-sm">Volver a Horas Extras</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger mb-2 flash-message" role="alert" data-auto-dismiss="6000">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.InfoMessage))
+    {
+        <div class="alert alert-info mb-2 flash-message" role="status" data-auto-dismiss="6000">@Model.InfoMessage</div>
+    }
+
+    @if (!Model.PuedeGestionarSuplentes)
+    {
+        <div class="alert alert-warning mb-2">No esta autorizado para gestionar suplentes.</div>
+    }
+    else
+    {
+    <div class="card shadow-sm supervisor-workspace">
+        <form method="post" asp-page="/Suplentes" class="card-body suplente-layout">
+            <div class="suplente-list-wrap">
+                <div class="suplente-list-header">
+                    <h2 class="h6">Colaboradores Disponibles</h2>
+                    @if (!string.IsNullOrWhiteSpace(Model.CarnetSuplenteActual))
+                    {
+                        <span class="badge text-bg-primary">Actual: @Model.CarnetSuplenteActual</span>
+                    }
+                </div>
+
+                <input
+                    id="suplente-busqueda"
+                    type="search"
+                    class="form-control mb-2"
+                    placeholder="Buscar colaborador por nombre o carnet"
+                    autocomplete="off" />
+
+                <div class="table-responsive suplente-list-scroll">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th class="suplente-col-radio">Sel.</th>
+                                <th>Nombre</th>
+                                <th>Carnet</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suplentes-listado-body">
+                            @if (Model.EmpleadosSuplentes.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-muted">No hay colaboradores disponibles.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var item in Model.EmpleadosSuplentes)
+                                {
+                                    var seleccionado = string.Equals(
+                                        (Model.EmpleadoSuplenteSeleccionado ?? string.Empty).Trim(),
+                                        (item.Carnet ?? string.Empty).Trim(),
+                                        StringComparison.OrdinalIgnoreCase);
+
+                                    <tr data-filter-row>
+                                        <td class="suplente-col-radio">
+                                            <input
+                                                type="radio"
+                                                name="EmpleadoSuplenteSeleccionado"
+                                                value="@item.Carnet"
+                                                checked="@seleccionado" />
+                                        </td>
+                                        <td data-filter-text>@item.NombresApellidos</td>
+                                        <td data-filter-text>@item.Carnet</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="suplente-form-wrap">
+                <h2 class="h6 mb-2">Configuracion de Vigencia</h2>
+
+                <div class="mb-2">
+                    <label asp-for="PeriodoInicia" class="form-label">Fecha inicia</label>
+                    <input asp-for="PeriodoInicia" type="date" class="form-control" />
+                </div>
+
+                <div class="mb-2">
+                    <label asp-for="PeriodoFinaliza" class="form-label">Fecha finaliza (opcional)</label>
+                    <input asp-for="PeriodoFinaliza" type="date" class="form-control" />
+                </div>
+
+                <div class="suplente-anular-box mb-3">
+                    <label class="suplente-anular-label">
+                        <input asp-for="AnularSuplente" id="chk-anular-suplente" type="checkbox" />
+                        <span>Anular suplente actual</span>
+                    </label>
+                    <small class="text-muted">Si activa esta opcion, se deshabilita la seleccion y solo se anula el suplente vigente.</small>
+                </div>
+
+                <div class="d-flex gap-2 wrap-actions suplente-form-actions">
+                    <button type="submit" asp-page-handler="Guardar" class="btn btn-primary">Guardar</button>
+                    <button type="submit" asp-page-handler="DeBaja" class="btn btn-outline-danger">Anular Ahora</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    }
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var searchInput = document.getElementById("suplente-busqueda");
+            var listBody = document.getElementById("suplentes-listado-body");
+            var anularCheckbox = document.getElementById("chk-anular-suplente");
+
+            function normalizeText(value) {
+                return (value || "").toString().trim().toLowerCase();
+            }
+
+            function applySearch() {
+                if (!searchInput || !listBody) {
+                    return;
+                }
+
+                var query = normalizeText(searchInput.value);
+                var rows = listBody.querySelectorAll("tr[data-filter-row]");
+                rows.forEach(function (row) {
+                    var text = normalizeText(row.textContent);
+                    row.hidden = query.length > 0 && text.indexOf(query) === -1;
+                });
+            }
+
+            function toggleInputsForAnular() {
+                if (!anularCheckbox) {
+                    return;
+                }
+
+                var disable = !!anularCheckbox.checked;
+                var dateInputs = document.querySelectorAll("input[name='PeriodoInicia'], input[name='PeriodoFinaliza']");
+                var radios = document.querySelectorAll("input[name='EmpleadoSuplenteSeleccionado']");
+
+                dateInputs.forEach(function (input) {
+                    input.disabled = disable;
+                });
+                radios.forEach(function (radio) {
+                    radio.disabled = disable;
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener("input", applySearch);
+                searchInput.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                    }
+                });
+            }
+
+            if (anularCheckbox) {
+                anularCheckbox.addEventListener("change", toggleInputsForAnular);
+                toggleInputsForAnular();
+            }
+
+            var flashMessages = document.querySelectorAll(".flash-message[data-auto-dismiss]");
+            flashMessages.forEach(function (message) {
+                var timeout = parseInt(message.getAttribute("data-auto-dismiss"), 10);
+                if (!Number.isFinite(timeout) || timeout <= 0) {
+                    timeout = 6000;
+                }
+
+                window.setTimeout(function () {
+                    message.classList.add("flash-message-hide");
+                    window.setTimeout(function () {
+                        message.remove();
+                    }, 380);
+                }, timeout);
+            });
+        })();
+    </script>
+}

@@ -8,10 +8,10 @@ namespace CDC.ProyeccionVentas.Dominio.Entidades
 {
     public class Usuario
     {
-        public string NumeroEmpleado { get; set; }
-        public string Contrasenia { get; set; }
-        public string Salt { get; set; }
-        public string Correo { get; set; }
+        public string NumeroEmpleado { get; set; } = string.Empty;
+        public string Contrasenia { get; set; } = string.Empty;
+        public string Salt { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
         public bool Activo { get; set; }
     }
 }

@@ -24,6 +24,10 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uc3VsdGFQcm95ZWNjaW9uZXMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/ConsultaTicketStaff.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uc3VsdGFUaWNrZXRTdGFmZi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -52,12 +56,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHJpdmFjeS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/ProgramarPedidosSucursales.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHJvZ3JhbWFyUGVkaWRvc1N1Y3Vyc2FsZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/SubirDatos.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3ViaXJEYXRvcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/SubirTicketStaff.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3ViaXJUaWNrZXRTdGFmZi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/TicketStaff.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVGlja2V0U3RhZmYuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/My proyects 2025 CC/CDC_ProyeccionVentas_2025/CDC.ProyeccionVentasPortal/CDC.ProyeccionVentas.FrontEnd/Pages/_ViewImports.cshtml]

@@ -10,5 +10,6 @@ namespace CDC.ProyeccionVentas.Dominio.Entidades
     {
         public int Id { get; set; }
         public decimal Monto { get; set; }
+        public int? TicketPromedio { get; set; }
     }
 }

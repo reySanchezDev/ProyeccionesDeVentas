@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\CDC.ProyeccionVentas.API.props" />
-</Project>

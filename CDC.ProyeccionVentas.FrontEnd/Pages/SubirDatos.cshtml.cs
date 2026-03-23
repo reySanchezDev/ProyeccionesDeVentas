@@ -10,7 +10,7 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
         private readonly IValidarFechasHttpClient _validarFechasHttpClient;
         private readonly IConfiguration _configuration;
 
-        public string ApiBaseUrl { get; private set; }
+        public string ApiBaseUrl { get; private set; } = string.Empty;
 
         public SubirDatosModel(IValidarFechasHttpClient validarFechasHttpClient, IConfiguration configuration)
         {
@@ -20,10 +20,10 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
 
         public void OnGet()
         {
-            ApiBaseUrl = _configuration["Servicios:ProyeccionVentasAPI"];
+            ApiBaseUrl = _configuration["Servicios:ProyeccionVentasAPI"] ?? string.Empty;
         }
 
-        // Este método se puede usar en el flujo de validación antes de guardar
+        // Este mÃ©todo se puede usar en el flujo de validaciÃ³n antes de guardar
         public async Task<List<ValidarFechaRequest>> ValidarDuplicadosAsync(List<ValidarFechaRequest> datosArchivo)
         {
             return await _validarFechasHttpClient.FiltrarExistentesAsync(datosArchivo);

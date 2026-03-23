@@ -1,0 +1,210 @@
+@page
+@model HorasExtrasCdC.Frontend.Pages.ListadoxSupervisorModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Aprobacion de Horas Extras";
+    ViewData["BodyClass"] = "page-supervisor";
+    ViewData["MainClass"] = "page-supervisor-main";
+    ViewData["UseLegacyDateRangePicker"] = true;
+}
+
+<section class="supervisor-shell" data-can-edit="@(Model.PuedeAprobar ? "true" : "false")">
+    <h1 class="h4 mb-2">Aprobacion de Horas Extras</h1>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.InfoMessage))
+    {
+        <div class="alert alert-info list-status-bar mb-2">
+            <span class="records-counter">@Model.InfoMessage</span>
+            <span id="supervisor-save-feedback" class="save-banner" hidden></span>
+        </div>
+    }
+    @if (!Model.PuedeAprobar)
+    {
+        <div class="alert alert-warning mb-2">No esta autorizado para aprobar horas extras. Vista en modo solo lectura.</div>
+    }
+
+    <div class="card shadow-sm supervisor-workspace">
+        <div class="card-body">
+            <div class="d-flex justify-content-end align-items-center mb-3">
+                <div class="d-flex gap-2 wrap-actions action-toolbar">
+                    <button type="button" id="btn-export-marcadas" class="btn btn-outline-primary btn-sm">Reporte Marcadas</button>
+                    <button type="button" id="btn-export-consolidado-pivot" class="btn btn-outline-primary btn-sm">Exportar Consolidado Pivotado</button>
+                    @if (Model.PuedeAprobar)
+                    {
+                        <button type="button" id="btn-export-consolidado" class="btn btn-outline-primary btn-sm">Exportar Consolidado</button>
+                    }
+                    @if (Model.PuedeAprobar)
+                    {
+                        <a asp-page="/Suplentes" class="btn btn-outline-primary btn-sm">Asignar Suplente</a>
+                    }
+                </div>
+            </div>
+            <div id="supervisor-export-feedback" class="export-status mb-2" hidden></div>
+
+            <form
+                id="filtros-form"
+                method="post"
+                asp-page-handler="Buscar"
+                class="row g-2 align-items-end mb-2 supervisor-filter-form"
+                data-filter-submit-id="btn-super-filtrar">
+                @if (Model.PuedeAprobar)
+                {
+                    <div class="col-12 col-md-3">
+                        <label asp-for="EmpleadoFiltro" class="form-label">Numero de empleado</label>
+                        <input asp-for="EmpleadoFiltro" class="form-control" inputmode="numeric" autocomplete="off" />
+                    </div>
+                }
+                else
+                {
+                    <input asp-for="EmpleadoFiltro" type="hidden" />
+                }
+                <div class="col-12 col-md-5">
+                    <label for="fecha-rango-filtro" class="form-label">Rango de fecha de entrada - Formato: MM/DD/AAAA (mes/dia/anio).</label>
+                    <input
+                        asp-for="FechaEntradaRango"
+                        id="fecha-rango-filtro"
+                        class="form-control range-filter-input"
+                        type="text"
+                        placeholder="MM/DD/AAAA - MM/DD/AAAA"
+                        autocomplete="off"
+                        data-start-id="FechaEntradaInicio"
+                        data-end-id="FechaEntradaFin" />
+                    <input asp-for="FechaEntradaInicio" type="hidden" />
+                    <input asp-for="FechaEntradaFin" type="hidden" />
+                </div>
+                <div class="col-12 col-md-4 filter-actions">
+                    <button id="btn-super-filtrar" class="btn btn-primary" type="submit" asp-page-handler="Buscar">Filtrar</button>
+                    <button id="btn-super-limpiar" class="btn btn-outline-primary" type="submit" asp-page-handler="Limpiar">Limpiar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive supervisor-table-scroll mt-3">
+                <table class="table table-sm table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th class="hidden-col">Id</th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="1" data-sort-type="text">
+                                    Sucursal
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="2" data-sort-type="text">
+                                    Codigo
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="3" data-sort-type="text">
+                                    Nombre
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="4" data-sort-type="text">
+                                    Ubicacion
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="5" data-sort-type="date">
+                                    Entrada
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="6" data-sort-type="date">
+                                    Salida
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="7" data-sort-type="number">
+                                    Laboradas
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="8" data-sort-type="number-input">
+                                    Extras
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="9" data-sort-type="input-text">
+                                    Concepto
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ListadoSupervisor.Count == 0)
+                        {
+                            <tr><td colspan="10" class="text-muted">Sin datos para mostrar.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var row in Model.ListadoSupervisor)
+                            {
+                                <tr
+                                    data-registro-id="@row.Id"
+                                    data-id-sqlite="@row.IdSqlite"
+                                    data-sucursal="@row.Sucursal"
+                                    data-empleado="@row.Empleado"
+                                    data-fecha-entro="@row.FechaEntro">
+                                    <td class="hidden-col">@row.Id</td>
+                                    <td>@row.Sucursal</td>
+                                    <td>@row.Empleado</td>
+                                    <td>@(row.NombreCompleto ?? row.NombreEmpleado)</td>
+                                    <td>@(row.Ubicacion ?? row.UbicadoEn)</td>
+                                    <td>@row.Entrada</td>
+                                    <td>@row.Salida</td>
+                                    <td>@row.HLaboradas</td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            class="form-control form-control-sm table-input hext-input"
+                                            inputmode="decimal"
+                                            autocomplete="off"
+                                            maxlength="6"
+                                            placeholder="0.00"
+                                            readonly="@(!Model.PuedeAprobar)"
+                                            value="@(row.HExt.HasValue ? row.HExt.Value.ToString("0.##", CultureInfo.InvariantCulture) : string.Empty)" />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            class="form-control form-control-sm table-input-concept concept-input"
+                                            maxlength="500"
+                                            readonly="@(!Model.PuedeAprobar)"
+                                            value="@(row.Descripcion ?? string.Empty)" />
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="visually-hidden" aria-hidden="true">
+                <table id="supervisor-consolidado-source">
+                    <tbody>
+                        @foreach (var row in Model.ConsolidadoSupervisor)
+                        {
+                            <tr
+                                data-empleado="@row.Empleado"
+                                data-total-he="@row.TotalHE.ToString("0.##", CultureInfo.InvariantCulture)"
+                                data-nombre-empleado="@row.NombreEmpleado"
+                                data-nombre-supervisor="@row.NombreSupervisor"></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

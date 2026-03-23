@@ -8,7 +8,7 @@ namespace CDC.ProyeccionVentas.Dominio.Entidades
 {
     public class ValidarFechaRequest
     {
-        public string CodSucursal { get; set; }
+        public string CodSucursal { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
     }
 }

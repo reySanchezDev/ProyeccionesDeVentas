@@ -16,6 +16,32 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.CalendarioController",
+    "Method": "GetMatriz",
+    "RelativePath": "api/Calendario",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.CalendarioController",
+    "Method": "GuardarDia",
+    "RelativePath": "api/Calendario/dia",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "CDC.ProyeccionVentas.API.Models.GuardarDiaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ProyeccionVentasController",
     "Method": "InsertarProyecciones",
     "RelativePath": "api/ProyeccionVentas/insertar-masivo",
@@ -26,6 +52,22 @@
       {
         "Name": "proyecciones",
         "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.ProyeccionVentaDto, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.ProyeccionVentasConsultaController",
+    "Method": "EliminarPorRango",
+    "RelativePath": "api/ProyeccionVentasConsulta/eliminar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.EliminarProyeccionVentasRequest",
         "IsRequired": true
       }
     ],
@@ -84,6 +126,162 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.Store, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.TicketStaffController",
+    "Method": "Consultar",
+    "RelativePath": "api/TicketStaff/consultar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "filter",
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffConsultaFilter",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffItem, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.TicketStaffController",
+    "Method": "DescargarStaff",
+    "RelativePath": "api/TicketStaff/descargar-staff",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "numeroSupervisor",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffDownloadItem, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.TicketStaffController",
+    "Method": "EliminarMes",
+    "RelativePath": "api/TicketStaff/eliminar-mes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffDeleteMonthRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffDeleteMonthResult",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.TicketStaffController",
+    "Method": "Guardar",
+    "RelativePath": "api/TicketStaff/guardar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffSaveRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffSaveResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.TicketStaffController",
+    "Method": "InsertarMasivo",
+    "RelativePath": "api/TicketStaff/insertar-masivo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffBulkUploadRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffBulkUploadResult",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CDC.ProyeccionVentas.API.Controllers.TicketStaffController",
+    "Method": "ValidarCarga",
+    "RelativePath": "api/TicketStaff/validar-carga",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "items",
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffBulkUploadItem, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[CDC.ProyeccionVentas.Dominio.Entidades.TicketStaffExistingItem, CDC.ProyeccionVentas.Dominio, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

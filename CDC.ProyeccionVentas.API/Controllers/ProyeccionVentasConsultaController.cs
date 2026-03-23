@@ -32,6 +32,12 @@ namespace CDC.ProyeccionVentas.API.Controllers
             if (cambios == null || !cambios.Any())
                 return BadRequest("No se recibieron datos para actualizar.");
 
+            if (cambios.Any(c => c.Monto < 0))
+                return BadRequest("Monto debe ser un decimal mayor o igual a cero.");
+
+            if (cambios.Any(c => c.TicketPromedio.HasValue && c.TicketPromedio.Value < 0))
+                return BadRequest("TicketPromedio debe ser un entero mayor o igual a cero cuando se informa.");
+
             try
             {
                 await _consultaService.GuardarCambiosAsync(cambios);
@@ -40,6 +46,33 @@ namespace CDC.ProyeccionVentas.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error al guardar los cambios: {ex.Message}");
+            }
+        }
+
+        [HttpPost("eliminar")]
+        public async Task<IActionResult> EliminarPorRango([FromBody] EliminarProyeccionVentasRequest request)
+        {
+            if (request == null)
+                return BadRequest("No se recibió información para eliminar.");
+
+            if (request.FechaInicio == default || request.FechaFin == default)
+                return BadRequest("FechaInicio y FechaFin son obligatorias.");
+
+            if (request.FechaInicio.Date > request.FechaFin.Date)
+                return BadRequest("FechaInicio no puede ser mayor que FechaFin.");
+
+            try
+            {
+                var resultado = await _consultaService.EliminarPorRangoAsync(request);
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al eliminar las proyecciones: {ex.Message}");
             }
         }
     }

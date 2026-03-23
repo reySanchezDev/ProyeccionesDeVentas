@@ -17,16 +17,9 @@ namespace CDC.ProyeccionVentas.HttpClients.Clients
             _httpClient = httpClient;
         }
 
-        public async Task<List<ProyeccionVentasToConsulta>> ObtenerFiltradoAsync(DateTime fechaInicio, DateTime fechaFin, string? codSucursal)
+        public async Task<List<ProyeccionVentasToConsulta>> ObtenerFiltradoAsync(FiltroProyeccionVentas filtro)
         {
-            var request = new
-            {
-                fechaInicio,
-                fechaFin,
-                codSucursal
-            };
-
-            var response = await _httpClient.PostAsJsonAsync("/api/proyeccionventasconsulta/filtrar", request);
+            var response = await _httpClient.PostAsJsonAsync("/api/proyeccionventasconsulta/filtrar", filtro);
             response.EnsureSuccessStatusCode();
 
             var resultado = await response.Content.ReadFromJsonAsync<List<ProyeccionVentasToConsulta>>();
@@ -36,7 +29,40 @@ namespace CDC.ProyeccionVentas.HttpClients.Clients
         public async Task<bool> GuardarCambiosAsync(List<ActualizarProyeccionDto> cambios)
         {
             var response = await _httpClient.PostAsJsonAsync("/api/proyeccionventasconsulta/guardar", cambios);
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(errorBody))
+            {
+                throw new InvalidOperationException($"La API devolvió HTTP {(int)response.StatusCode} al guardar cambios.");
+            }
+
+            throw new InvalidOperationException(errorBody);
+        }
+
+        public async Task<EliminarProyeccionVentasResult> EliminarPorRangoAsync(EliminarProyeccionVentasRequest request)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/proyeccionventasconsulta/eliminar", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var resultado = await response.Content.ReadFromJsonAsync<EliminarProyeccionVentasResult>();
+                return resultado ?? new EliminarProyeccionVentasResult
+                {
+                    RegistrosEliminados = 0,
+                    Mensaje = "La API no devolvió un resultado de eliminación."
+                };
+            }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(errorBody))
+            {
+                throw new InvalidOperationException($"La API devolvió HTTP {(int)response.StatusCode} al eliminar proyecciones.");
+            }
+
+            throw new InvalidOperationException(errorBody);
         }
     }
 }

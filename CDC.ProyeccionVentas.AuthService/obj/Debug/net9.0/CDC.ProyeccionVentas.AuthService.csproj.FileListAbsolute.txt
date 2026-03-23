@@ -8,6 +8,7 @@ D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.
 D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\CDC.ProyeccionVentas.AuthService.AssemblyInfoInputs.cache
 D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\CDC.ProyeccionVentas.AuthService.AssemblyInfo.cs
 D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\CDC.ProyeccionVentas.AuthService.csproj.CoreCompileInputs.cache
+D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\CDC.ProyeccionVentas.AuthService.sourcelink.json
 D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\CDC.Proy.AD7E9C6F.Up2Date
 D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\CDC.ProyeccionVentas.AuthService.dll
 D:\My proyects 2025 CC\CDC_ProyeccionVentas_2025\CDC.ProyeccionVentasPortal\CDC.ProyeccionVentas.AuthService\obj\Debug\net9.0\refint\CDC.ProyeccionVentas.AuthService.dll

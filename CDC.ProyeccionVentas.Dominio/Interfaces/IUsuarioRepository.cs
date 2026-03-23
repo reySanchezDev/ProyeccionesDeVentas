@@ -10,7 +10,7 @@ namespace CDC.ProyeccionVentas.Dominio.Interfaces
 {
     public interface IUsuarioRepository
     {
-        Task<Usuario> ObtenerUsuarioPorNumeroEmpleadoAsync(string numeroEmpleado);
+        Task<Usuario?> ObtenerUsuarioPorNumeroEmpleadoAsync(string numeroEmpleado);
 
     }
 }

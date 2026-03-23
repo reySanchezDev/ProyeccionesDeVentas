@@ -58,14 +58,28 @@ namespace CDC.ProyeccionVentas.AuthService.Servicios
 
 
         // Lógica para hash, si más adelante cambian la forma de hashear, solo cambia aquí
+        //private string HashPassword(string password, string salt)
+        //{
+        //    using (var sha1 = SHA1.Create())
+        //    {
+        //        byte[] bytes = Encoding.UTF8.GetBytes(password);
+        //        byte[] hash = sha1.ComputeHash(bytes);
+        //        return System.Convert.ToBase64String(hash);
+        //    }
+        //}
+
         private string HashPassword(string password, string salt)
         {
-            using (var sha1 = SHA1.Create())
+            // Convierte el salt desde Base64 a bytes
+            byte[] saltBytes = Convert.FromBase64String(salt);
+
+            using (var deriveBytes = new Rfc2898DeriveBytes(password, saltBytes, 10000, HashAlgorithmName.SHA1))
             {
-                byte[] bytes = Encoding.UTF8.GetBytes(password);
-                byte[] hash = sha1.ComputeHash(bytes);
-                return System.Convert.ToBase64String(hash);
+                // 20 bytes como lo define el otro sistema (usando SHA1)
+                byte[] hashBytes = deriveBytes.GetBytes(20);
+                return Convert.ToBase64String(hashBytes);
             }
         }
+
     }
 }

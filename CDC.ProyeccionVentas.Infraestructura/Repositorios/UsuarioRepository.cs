@@ -15,7 +15,7 @@ namespace CDC.ProyeccionVentas.Infraestructura.Repositorios
             _connectionString = connectionString;
         }
 
-        public async Task<Usuario> ObtenerUsuarioPorNumeroEmpleadoAsync(string numeroEmpleado)
+        public async Task<Usuario?> ObtenerUsuarioPorNumeroEmpleadoAsync(string numeroEmpleado)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -35,11 +35,11 @@ namespace CDC.ProyeccionVentas.Infraestructura.Repositorios
                         {
                             return new Usuario
                             {
-                                NumeroEmpleado = reader["NumeroEmpleado"].ToString(),
-                                Contrasenia = reader["contrasenia"].ToString(),
-                                Salt = reader["salt"].ToString(),
-                                Correo = reader["correo"].ToString(),
-                                Activo = (bool)reader["Activo"]
+                                NumeroEmpleado = reader["NumeroEmpleado"]?.ToString() ?? string.Empty,
+                                Contrasenia = reader["contrasenia"]?.ToString() ?? string.Empty,
+                                Salt = reader["salt"]?.ToString() ?? string.Empty,
+                                Correo = reader["correo"]?.ToString() ?? string.Empty,
+                                Activo = reader.GetBoolean(reader.GetOrdinal("Activo"))
                             };
                         }
                     }

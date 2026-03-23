@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CDC.ProyeccionVentas.FrontEnd.Pages
@@ -11,26 +13,75 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
     public class ConsultaProyeccionesModel : PageModel
     {
         private readonly IProyeccionVentasConsultaHttpClient _consultaClient;
+        private readonly IStoresHttpClient _storesClient;
 
-        public ConsultaProyeccionesModel(IProyeccionVentasConsultaHttpClient consultaClient)
+        public ConsultaProyeccionesModel(IProyeccionVentasConsultaHttpClient consultaClient, IStoresHttpClient storesClient)
         {
             _consultaClient = consultaClient;
+            _storesClient = storesClient;
         }
 
-        [BindProperty(SupportsGet = true)] // Habilitar Binding también para GET si necesitas que los filtros se mantengan en el URL o al navegar
-        public FiltroProyeccionVentas Filtro { get; set; } // NO inicializar aquí
+        [BindProperty(SupportsGet = true)]
+        public FiltroProyeccionVentas Filtro { get; set; } = new();
 
         public List<ProyeccionVentasToConsulta> Resultados { get; set; } = new();
+        public List<Store> StoresDisponibles { get; set; } = new();
 
         public string? Mensaje { get; set; }
         public string? MensajeError { get; set; }
-        public bool MostrarMensajeSinResultados { get; set; } = false;
+        public bool MostrarMensajeSinResultados { get; set; }
+        public int AnioActual => DateTime.Today.Year;
+        public IReadOnlyList<int> AniosEliminar => Enumerable.Range(AnioActual - 2, 5).ToList();
+        public IReadOnlyList<(int Valor, string Nombre)> MesesEliminar => Enumerable.Range(1, 12)
+            .Select(m => (m, CultureInfo.GetCultureInfo("es-NI").DateTimeFormat.GetMonthName(m)))
+            .ToList();
 
-        public void OnGet()
+        public string ResumenSucursalesSeleccionadas
         {
-            // Solo inicializamos si el filtro está nulo (primera carga GET sin parámetros en URL)
-            // Si SupportsGet = true y hay parámetros en la URL, Filtro ya estaría poblado.
-            if (Filtro == null || (Filtro.FechaInicio == default(DateTime) && Filtro.FechaFin == default(DateTime)))
+            get
+            {
+                var seleccionadas = (Filtro.CodSucursales ?? new List<string>())
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (!seleccionadas.Any())
+                {
+                    return "Todas las sucursales";
+                }
+
+                if (seleccionadas.Count <= 2)
+                {
+                    return string.Join(", ", seleccionadas);
+                }
+
+                return $"{seleccionadas.Count} sucursales seleccionadas";
+            }
+        }
+
+        private async Task CargarStoresAsync()
+        {
+            StoresDisponibles = (await _storesClient.ObtenerStoresAsync())
+                .Where(s =>
+                    !string.IsNullOrWhiteSpace(s.No) &&
+                    (s.No.StartsWith("SK", StringComparison.OrdinalIgnoreCase) ||
+                     s.No.StartsWith("SR", StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(s => s.No)
+                .ThenBy(s => s.StoreNo)
+                .ToList();
+
+            Filtro.CodSucursales = (Filtro.CodSucursales ?? new List<string>())
+                .Where(c =>
+                    !string.IsNullOrWhiteSpace(c) &&
+                    (c.StartsWith("SK", StringComparison.OrdinalIgnoreCase) ||
+                     c.StartsWith("SR", StringComparison.OrdinalIgnoreCase)))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        public async Task OnGetAsync()
+        {
+            if (Filtro == null || (Filtro.FechaInicio == default && Filtro.FechaFin == default))
             {
                 Filtro = new FiltroProyeccionVentas
                 {
@@ -38,25 +89,23 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
                     FechaFin = DateTime.Today
                 };
             }
+
+            await CargarStoresAsync();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Aquí, gracias a [BindProperty], Filtro ya debería contener los valores del formulario.
-            // No necesitamos hacer nada extra para rellenarlo con los valores post.
+            await CargarStoresAsync();
 
             if (!ModelState.IsValid)
             {
                 MensajeError = "Hay errores en el formulario. Por favor, revise los campos.";
-                // Si hay errores de validación, return Page() automáticamente mantendrá los valores
-                // que se intentaron vincular a Filtro.
                 return Page();
             }
 
-            // Si llegamos aquí, Filtro debería tener los valores correctos de la última búsqueda.
             try
             {
-                Resultados = await _consultaClient.ObtenerFiltradoAsync(Filtro.FechaInicio, Filtro.FechaFin, Filtro.CodSucursal);
+                Resultados = await _consultaClient.ObtenerFiltradoAsync(Filtro);
 
                 if (Resultados == null || !Resultados.Any())
                 {
@@ -65,11 +114,10 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
             }
             catch (Exception ex)
             {
-                MensajeError = $"Ocurrió un error al consultar las proyecciones: {ex.Message}";
-                // En caso de error, también regresamos la página y mantenemos los filtros
+                MensajeError = $"OcurriÃ³ un error al consultar las proyecciones: {ex.Message}";
             }
 
-            return Page(); // Renderiza la página, usando el estado actual de Filtro
+            return Page();
         }
 
         public async Task<IActionResult> OnPostGuardarAsync([FromBody] List<ActualizarProyeccionDto> cambios)
@@ -80,17 +128,33 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
             try
             {
                 await _consultaClient.GuardarCambiosAsync(cambios);
-                // Después de guardar, usualmente querrás recargar la página para ver los cambios
-                // y refrescar los totales. Redirigir a la misma página manteniendo los filtros
-                // es una buena estrategia.
-                // return RedirectToPage(new { FechaInicio = Filtro.FechaInicio, FechaFin = Filtro.FechaFin, CodSucursal = Filtro.CodSucursal });
-                // Sin embargo, si quieres mantener el comportamiento actual de recarga total del navegador
-                // vía JavaScript, entonces el return new JsonResult() es correcto para la llamada AJAX.
                 return new JsonResult(new { mensaje = "Cambios guardados correctamente." });
             }
             catch (Exception ex)
             {
                 return new JsonResult(new { error = $"Error al guardar cambios: {ex.Message}" }) { StatusCode = 500 };
+            }
+        }
+
+        public async Task<IActionResult> OnPostEliminarAsync([FromBody] EliminarProyeccionVentasRequest request)
+        {
+            if (request == null)
+                return BadRequest("No se recibiÃ³ informaciÃ³n para eliminar.");
+
+            if (request.FechaInicio == default || request.FechaFin == default)
+                return BadRequest("Debe seleccionar un mes y un aÃ±o vÃ¡lidos.");
+
+            if (request.FechaInicio.Date > request.FechaFin.Date)
+                return BadRequest("El rango de fechas a eliminar no es vÃ¡lido.");
+
+            try
+            {
+                var resultado = await _consultaClient.EliminarPorRangoAsync(request);
+                return new JsonResult(resultado);
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { error = $"Error al eliminar registros: {ex.Message}" }) { StatusCode = 500 };
             }
         }
     }

@@ -9,11 +9,10 @@ namespace CDC.ProyeccionVentas.HttpClients.Interfaces
 {
     public interface IProyeccionVentasConsultaHttpClient
     {
-        Task<List<ProyeccionVentasToConsulta>> ObtenerFiltradoAsync(DateTime fechaInicio, DateTime fechaFin, string? codSucursal);
+        Task<List<ProyeccionVentasToConsulta>> ObtenerFiltradoAsync(FiltroProyeccionVentas filtro);
 
         Task<bool> GuardarCambiosAsync(List<ActualizarProyeccionDto> cambios);
 
-
-
+        Task<EliminarProyeccionVentasResult> EliminarPorRangoAsync(EliminarProyeccionVentasRequest request);
     }
 }

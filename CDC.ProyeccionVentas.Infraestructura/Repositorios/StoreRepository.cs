@@ -32,8 +32,8 @@ namespace CDC.ProyeccionVentas.Infraestructura.Repositorios
             {
                 stores.Add(new Store
                 {
-                    No = reader["No"].ToString(),
-                    StoreNo = reader["StoreNo"].ToString()
+                    No = reader["No"]?.ToString() ?? string.Empty,
+                    StoreNo = reader["StoreNo"]?.ToString() ?? string.Empty
                 });
             }
 

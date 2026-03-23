@@ -13,6 +13,6 @@ namespace CDC.ProyeccionVentas.Dominio.Interfaces
 
         Task GuardarCambiosAsync(List<ActualizarProyeccionDto> cambios);
 
-
+        Task<EliminarProyeccionVentasResult> EliminarPorRangoAsync(EliminarProyeccionVentasRequest request);
     }
 }

@@ -1,0 +1,128 @@
+@page
+@model HorasExtrasCdC.Frontend.Pages.ListadoGHModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Listado GH";
+    ViewData["BodyClass"] = "page-supervisor";
+    ViewData["MainClass"] = "page-supervisor-main";
+    ViewData["UseLegacyDateRangePicker"] = true;
+}
+
+<section class="supervisor-shell">
+    <h1 class="h4 mb-2">Gestion Humana</h1>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.InfoMessage))
+    {
+        <div class="alert alert-info list-status-bar mb-2">
+            <span class="records-counter">@Model.InfoMessage</span>
+        </div>
+    }
+
+    <div class="card shadow-sm supervisor-workspace">
+        <div class="card-body">
+            <div class="d-flex justify-content-end align-items-center mb-3">
+                <div class="d-flex gap-2 wrap-actions action-toolbar">
+                    <button type="button" id="btn-gh-export-marcadas" class="btn btn-outline-primary btn-sm">Reporte Marcadas</button>
+                    <button type="button" id="btn-gh-export-consolidado" class="btn btn-outline-primary btn-sm">Imprimir Consolidado</button>
+                </div>
+            </div>
+            <div id="gh-export-feedback" class="export-status mb-2" hidden></div>
+
+            <form
+                id="filtros-form"
+                method="post"
+                asp-page-handler="Buscar"
+                class="row g-2 align-items-end mb-2 supervisor-filter-form"
+                data-filter-submit-id="btn-gh-filtrar">
+                <div class="col-12 col-md-3">
+                    <label asp-for="EmpleadoFiltro" class="form-label">Numero de empleado</label>
+                    <input asp-for="EmpleadoFiltro" class="form-control" inputmode="numeric" autocomplete="off" />
+                </div>
+                <div class="col-12 col-md-5">
+                    <label for="fecha-rango-filtro" class="form-label">Rango de fecha - Formato: MM/DD/AAAA (mes/dia/anio).</label>
+                    <input
+                        asp-for="FechaEntradaRango"
+                        id="fecha-rango-filtro"
+                        class="form-control range-filter-input"
+                        type="text"
+                        placeholder="MM/DD/AAAA - MM/DD/AAAA"
+                        autocomplete="off"
+                        data-start-id="FechaEntradaInicio"
+                        data-end-id="FechaEntradaFin" />
+                    <input asp-for="FechaEntradaInicio" type="hidden" />
+                    <input asp-for="FechaEntradaFin" type="hidden" />
+                </div>
+                <div class="col-12 col-md-4 filter-actions">
+                    <button id="btn-gh-filtrar" class="btn btn-primary" type="submit" asp-page-handler="Buscar">Filtrar</button>
+                    <button id="btn-gh-limpiar" class="btn btn-outline-primary" type="submit" asp-page-handler="Limpiar">Limpiar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive supervisor-table-scroll mt-3">
+                <table class="table table-sm table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="0" data-sort-type="text">
+                                    Codigo
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="1" data-sort-type="number">
+                                    H. Extras
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="2" data-sort-type="text">
+                                    Nombre
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="3" data-sort-type="text">
+                                    Ubicacion
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-trigger" data-sort-col="4" data-sort-type="text">
+                                    Supervisor
+                                    <span class="sort-indicator" aria-hidden="true"></span>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Consolidadas.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-muted">Sin datos para mostrar.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var row in Model.Consolidadas)
+                            {
+                                <tr data-registro-id="@row.Empleado">
+                                    <td>@row.Empleado</td>
+                                    <td>@row.TotalHE.ToString("0.##", CultureInfo.InvariantCulture)</td>
+                                    <td>@row.NombreEmpleado</td>
+                                    <td>@row.Ubicacion</td>
+                                    <td>@row.NombreSupervisor</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/listado-gh.js"></script>
+}
