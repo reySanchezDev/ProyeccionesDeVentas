@@ -22,6 +22,9 @@
         var isSubirDatos = currentPath.EndsWith("/SubirDatos", StringComparison.OrdinalIgnoreCase);
         var isConsulta = currentPath.EndsWith("/ConsultaProyecciones", StringComparison.OrdinalIgnoreCase);
         var isProgramacion = currentPath.EndsWith("/ProgramarPedidosSucursales", StringComparison.OrdinalIgnoreCase);
+        var isSubirTicketStaff = currentPath.EndsWith("/SubirTicketStaff", StringComparison.OrdinalIgnoreCase)
+            || currentPath.EndsWith("/TicketStaff", StringComparison.OrdinalIgnoreCase);
+        var isConsultaTicketStaff = currentPath.EndsWith("/ConsultaTicketStaff", StringComparison.OrdinalIgnoreCase);
     }
 
     <div id="appContainer"
@@ -57,12 +60,21 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link@(isConsulta ? " is-active" : string.Empty)"
-                                   asp-page="/ConsultaProyecciones"
-                                   title="Consultar Proyecciones"
-                                   aria-current="@(isConsulta ? "page" : null)">
-                                    <i class="bi bi-search"></i>
-                                    <span>Consultar Proyecciones</span>
+                                <a class="nav-link@(isSubirTicketStaff ? " is-active" : string.Empty)"
+                                   asp-page="/SubirTicketStaff"
+                                   title="Subir Ticket Promedio Staff"
+                                   aria-current="@(isSubirTicketStaff ? "page" : null)">
+                                    <i class="bi bi-people"></i>
+                                    <span>Subir Ticket Promedio Staff</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link@(isConsultaTicketStaff ? " is-active" : string.Empty)"
+                                   asp-page="/ConsultaTicketStaff"
+                                   title="Consultar Ticket Promedio Staff"
+                                   aria-current="@(isConsultaTicketStaff ? "page" : null)">
+                                    <i class="bi bi-search-heart"></i>
+                                    <span>Consultar Ticket Promedio Staff</span>
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -72,6 +84,15 @@
                                    aria-current="@(isProgramacion ? "page" : null)">
                                     <i class="bi bi-calendar-week"></i>
                                     <span>Programar pedidos por sucursal</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link@(isConsulta ? " is-active" : string.Empty)"
+                                   asp-page="/ConsultaProyecciones"
+                                   title="Consultar Proyecciones"
+                                   aria-current="@(isConsulta ? "page" : null)">
+                                    <i class="bi bi-search"></i>
+                                    <span>Consultar Proyecciones</span>
                                 </a>
                             </li>
                         </ul>

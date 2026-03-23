@@ -7,32 +7,30 @@ using CDC.ProyeccionVentas.Infraestructura.Servicios;
 
 
 var builder = WebApplication.CreateBuilder(args);
+var cdcConnectionString = builder.Configuration.GetConnectionString("CDC")
+    ?? throw new InvalidOperationException("Falta la cadena de conexiÃ³n 'CDC'.");
+var reportesLsConnectionString = builder.Configuration.GetConnectionString("ReportesLS")
+    ?? throw new InvalidOperationException("Falta la cadena de conexiÃ³n 'ReportesLS'.");
 
-// ---------------------- INYECCIÓN DE DEPENDENCIAS ----------------------
+// ---------------------- INYECCIÃ“N DE DEPENDENCIAS ----------------------
 
-// Autenticación (base CDC)
+// AutenticaciÃ³n (base CDC)
 builder.Services.AddScoped<IUsuarioRepository>(provider =>
 {
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = config.GetConnectionString("CDC");
-    return new UsuarioRepository(connectionString);
+    return new UsuarioRepository(cdcConnectionString);
 });
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // ReportesLS: ProyeccionVentas y Stores
 builder.Services.AddScoped<IProyeccionVentasRepository>(provider =>
 {
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = config.GetConnectionString("ReportesLS");
-    return new ProyeccionVentasRepository(connectionString);
+    return new ProyeccionVentasRepository(reportesLsConnectionString);
 });
 builder.Services.AddScoped<IProyeccionVentasService, ProyeccionVentasService>();
 
 builder.Services.AddScoped<IStoreRepository>(provider =>
 {
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = config.GetConnectionString("ReportesLS");
-    return new StoreRepository(connectionString);
+    return new StoreRepository(reportesLsConnectionString);
 });
 builder.Services.AddScoped<StoreService>();
 
@@ -40,15 +38,20 @@ builder.Services.AddScoped<StoreService>();
 //ReportesLS: para validar proyecciones que no se repitan en el mismo mes
 builder.Services.AddScoped<IValidarFechasRepository>(provider =>
 {
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = config.GetConnectionString("ReportesLS");
-    return new ValidarFechasRepository(connectionString);
+    return new ValidarFechasRepository(reportesLsConnectionString);
 });
 
 builder.Services.AddScoped<IValidarFechasService, ValidarFechasService>();
 
 
 builder.Services.AddScoped<IProyeccionVentasConsultaService, ProyeccionVentasConsultaService>();
+
+builder.Services.AddScoped<ICalendarioPedidosService, CalendarioPedidosService>();
+
+builder.Services.AddScoped<ITicketStaffService>(provider =>
+{
+    return new TicketStaffService(reportesLsConnectionString);
+});
 
 
 // ----------------------------- CORS -------------------------------------
@@ -63,7 +66,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ---------------------------- CONFIGURACIÓN -----------------------------
+// ---------------------------- CONFIGURACIÃ“N -----------------------------
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

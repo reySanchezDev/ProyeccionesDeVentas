@@ -11,11 +11,11 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
     public class LoginModel : PageModel
     {
         [BindProperty]
-        public string NumeroEmpleado { get; set; }
+        public string NumeroEmpleado { get; set; } = string.Empty;
         [BindProperty]
-        public string Contraseña { get; set; }
+        public string ContraseÃ±a { get; set; } = string.Empty;
 
-        public string ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
 
         private readonly AuthApiClient _authApiClient;
 
@@ -30,31 +30,30 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (string.IsNullOrWhiteSpace(NumeroEmpleado) || string.IsNullOrWhiteSpace(Contraseña))
+            if (string.IsNullOrWhiteSpace(NumeroEmpleado) || string.IsNullOrWhiteSpace(ContraseÃ±a))
             {
-                ErrorMessage = "Debe ingresar el número de empleado y la contraseña.";
+                ErrorMessage = "Debe ingresar el nÃºmero de empleado y la contraseÃ±a.";
                 return Page();
             }
 
-            var result = await _authApiClient.LoginAsync(NumeroEmpleado, Contraseña);
+            var numeroEmpleadoNormalizado = NumeroEmpleado.Trim();
+            var result = await _authApiClient.LoginAsync(numeroEmpleadoNormalizado, ContraseÃ±a);
 
             if (result.Success)
             {
-                // Creamos los claims (puedes agregar más si quieres)
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, NumeroEmpleado)
-                    // Puedes agregar más claims aquí si necesitas
+                    new Claim(ClaimTypes.Name, numeroEmpleadoNormalizado),
+                    new Claim(ClaimTypes.NameIdentifier, numeroEmpleadoNormalizado),
+                    new Claim("NumeroEmpleado", numeroEmpleadoNormalizado)
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                // Emitimos la cookie de autenticación
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity));
 
-                // Redirige a la página principal (o la que desees)
                 return RedirectToPage("/Principal");
             }
             else

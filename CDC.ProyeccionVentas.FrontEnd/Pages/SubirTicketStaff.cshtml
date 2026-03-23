@@ -1,0 +1,559 @@
+@page
+@model SubirTicketStaffModel
+@{
+    ViewData["Title"] = "Subir Ticket Promedio Staff";
+    ViewData["ShowSidebar"] = true;
+    ViewData["HtmlClass"] = "upload-screen-page";
+    ViewData["BodyClass"] = "upload-screen-page";
+    ViewData["AppContainerClass"] = "app-container-upload-screen";
+    ViewData["MainContentClass"] = "main-content-area-upload-screen";
+    ViewData["MainBodyClass"] = "main-body-upload-screen";
+    ViewData["PageFrameClass"] = "page-frame-upload-screen";
+}
+
+<div class="screen-shell upload-screen-shell"
+     id="ticketStaffUploadApp"
+     data-month-start="@Model.CurrentMonthStart"
+     data-month-end="@Model.CurrentMonthEnd">
+    <section class="screen-card screen-card-header screen-card-header-compact">
+        <div class="screen-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+            <span id="mensajeDinamico" class="page-status-message screen-status upload-screen-status" aria-live="polite"></span>
+        </div>
+    </section>
+
+    <form method="post" id="ticketStaffUploadAntiForgeryForm" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <section class="screen-card screen-card-form">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label for="excelInput" class="form-label">Archivo de carga masiva</label>
+                <input type="file"
+                       class="form-control custom-btn-effect"
+                       id="excelInput"
+                       accept=".xlsx,.xls,.xlsm,.csv" />
+            </div>
+            <div class="col-lg-6">
+                <label for="supervisorStaffInput" class="form-label">Supervisor para descarga de staff</label>
+                <input type="text"
+                       class="form-control"
+                       id="supervisorStaffInput"
+                       maxlength="20"
+                       placeholder="Opcional para descargar por supervisor" />
+            </div>
+        </div>
+    </section>
+
+    <section class="screen-card screen-card-actions">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-outline-success custom-btn-effect" id="btnDescargarPlantilla">
+                <i class="bi bi-file-earmark-excel me-1"></i> Descargar plantilla
+            </button>
+            <button type="button" class="btn btn-outline-secondary custom-btn-effect" id="btnDescargarStaffTodos">
+                <i class="bi bi-download me-1"></i> Descargar staff
+            </button>
+            <button type="button" class="btn btn-outline-secondary custom-btn-effect" id="btnDescargarStaffSupervisor">
+                <i class="bi bi-person-badge me-1"></i> Staff por supervisor
+            </button>
+            <button type="button" class="btn btn-primary custom-btn-effect" id="btnLeerArchivo">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i> Leer archivo
+            </button>
+            <button type="button" class="btn btn-success custom-btn-effect" id="btnGuardar" disabled>
+                <i class="bi bi-database-check me-1"></i> Guardar en BD
+            </button>
+            <button type="button" class="btn btn-outline-danger custom-btn-effect" id="btnLimpiar">
+                <i class="bi bi-x-circle me-1"></i> Limpiar
+            </button>
+            <span class="badge bg-info text-dark ms-auto d-none" id="badgeFilas"></span>
+            <span class="badge bg-secondary d-none" id="badgeEmpleados"></span>
+        </div>
+    </section>
+
+    <section class="screen-card screen-card-table d-none" id="preview">
+        <h4 class="upload-preview-title">Vista previa de la carga</h4>
+        <div class="scroll-tabla-preview">
+            <table class="table table-bordered table-striped mt-2" id="tablaPreviewTicketStaff">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Número Empleado</th>
+                        <th>Nombre Staff</th>
+                        <th>Ticket Promedio</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="existingRecordsModal" tabindex="-1" aria-labelledby="existingRecordsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="existingRecordsModalLabel">Registros ya guardados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3" id="existingRecordsModalMessage">Ya existen registros guardados para una o más combinaciones de Fecha + NumeroEmpleado.</p>
+                <ul class="mb-0" id="existingRecordsList"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary custom-btn-effect" data-bs-dismiss="modal">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const uploadApp = document.getElementById("ticketStaffUploadApp");
+        const monthStart = uploadApp.dataset.monthStart;
+        const monthEnd = uploadApp.dataset.monthEnd;
+        const excelInput = document.getElementById("excelInput");
+        const previewCard = document.getElementById("preview");
+        const previewBody = document.querySelector("#tablaPreviewTicketStaff tbody");
+        const btnGuardar = document.getElementById("btnGuardar");
+        const badgeFilas = document.getElementById("badgeFilas");
+        const badgeEmpleados = document.getElementById("badgeEmpleados");
+        const supervisorStaffInput = document.getElementById("supervisorStaffInput");
+        const existingRecordsModal = new bootstrap.Modal(document.getElementById("existingRecordsModal"));
+        const existingRecordsModalLabel = document.getElementById("existingRecordsModalLabel");
+        const existingRecordsModalMessage = document.getElementById("existingRecordsModalMessage");
+        const existingRecordsList = document.getElementById("existingRecordsList");
+        let messageTimeoutId = null;
+        let filasCargadas = [];
+
+        const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+
+        const limpiarTimeoutMensaje = () => {
+            if (messageTimeoutId) {
+                clearTimeout(messageTimeoutId);
+                messageTimeoutId = null;
+            }
+        };
+
+        const mostrarMensaje = (tipo, texto, duracion = 4000) => {
+            const contenedor = document.getElementById("mensajeDinamico");
+            limpiarTimeoutMensaje();
+
+            if (!texto) {
+                contenedor.textContent = "";
+                contenedor.className = "page-status-message screen-status upload-screen-status";
+                return;
+            }
+
+            contenedor.textContent = texto;
+            contenedor.className = `page-status-message screen-status upload-screen-status is-${tipo}`;
+
+            if (duracion > 0) {
+                messageTimeoutId = window.setTimeout(() => {
+                    contenedor.textContent = "";
+                    contenedor.className = "page-status-message screen-status upload-screen-status";
+                    messageTimeoutId = null;
+                }, duracion);
+            }
+        };
+
+        const formatearFecha = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+
+        const limpiarInterfaz = (limpiarMensaje = true) => {
+            filasCargadas = [];
+            excelInput.value = "";
+            previewBody.innerHTML = "";
+            previewCard.classList.add("d-none");
+            previewCard.style.display = "none";
+            btnGuardar.disabled = true;
+            badgeFilas.classList.add("d-none");
+            badgeEmpleados.classList.add("d-none");
+
+            if (limpiarMensaje) {
+                mostrarMensaje("", "");
+            }
+        };
+
+        const normalizarCabecera = (valor) => String(valor ?? "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, "");
+
+        const parseExcelDate = (value) => {
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+            }
+
+            if (typeof value === "number") {
+                const parsed = XLSX.SSF.parse_date_code(value);
+                if (!parsed) {
+                    return null;
+                }
+
+                return new Date(parsed.y, parsed.m - 1, parsed.d);
+            }
+
+            const text = String(value ?? "").trim();
+            if (!text) {
+                return null;
+            }
+
+            const isoMatch = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+            if (isoMatch) {
+                return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+            }
+
+            const dmyMatch = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+            if (dmyMatch) {
+                return new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
+            }
+
+            const parsed = new Date(text);
+            if (Number.isNaN(parsed.getTime())) {
+                return null;
+            }
+
+            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        };
+
+        const parseTicketPromedio = (value) => {
+            if (value === null || value === undefined || value === "") {
+                return 0;
+            }
+
+            if (typeof value === "number") {
+                return Number.isInteger(value) && value >= 0 ? value : null;
+            }
+
+            const text = String(value).trim();
+            if (!text) {
+                return 0;
+            }
+
+            if (!/^\d+$/.test(text)) {
+                return null;
+            }
+
+            return Number(text);
+        };
+
+        const renderPreview = () => {
+            previewBody.innerHTML = filasCargadas.map(item => `
+                <tr>
+                    <td>${item.fecha}</td>
+                    <td>${item.numeroEmpleado}</td>
+                    <td>${item.nombreStaff || ""}</td>
+                    <td>${item.ticketPromedio}</td>
+                </tr>
+            `).join("");
+
+            previewCard.classList.remove("d-none");
+            previewCard.style.display = "flex";
+            badgeFilas.textContent = `Filas: ${filasCargadas.length}`;
+            badgeFilas.classList.remove("d-none");
+
+            const totalEmpleados = new Set(filasCargadas.map(item => item.numeroEmpleado)).size;
+            badgeEmpleados.textContent = `Staff: ${totalEmpleados}`;
+            badgeEmpleados.classList.remove("d-none");
+            const previewScroller = previewCard.querySelector(".scroll-tabla-preview");
+            if (previewScroller) {
+                previewScroller.scrollTop = 0;
+            }
+        };
+
+        const obtenerMensajeError = async (response) => {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+                const data = await response.json();
+                return data.error || data.mensaje || data.message || `HTTP ${response.status}`;
+            }
+
+            const text = await response.text();
+            return text || `HTTP ${response.status}`;
+        };
+
+        const mostrarModalLista = (titulo, mensaje, items) => {
+            existingRecordsModalLabel.textContent = titulo;
+            existingRecordsModalMessage.textContent = mensaje;
+            const detalle = items
+                .slice(0, 20)
+                .map(item => `<li>${item}</li>`)
+                .join("");
+            const extra = items.length > 20
+                ? `<li>Y ${items.length - 20} coincidencia(s) más...</li>`
+                : "";
+
+            existingRecordsList.innerHTML = `${detalle}${extra}`;
+            existingRecordsModal.show();
+        };
+
+        const validarExistentes = async () => {
+            const response = await fetch(`${window.location.pathname}?handler=ValidarExistentes`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": tokenAntiforgery()
+                },
+                body: JSON.stringify(filasCargadas)
+            });
+
+            if (!response.ok) {
+                throw new Error(await obtenerMensajeError(response));
+            }
+
+            return await response.json();
+        };
+
+        const procesarArchivo = async () => {
+            const file = excelInput.files?.[0];
+            if (!file) {
+                mostrarMensaje("warning", "Debe seleccionar un archivo antes de leerlo.");
+                return;
+            }
+
+            limpiarInterfaz(false);
+            mostrarMensaje("info", "Validando archivo...", 0);
+
+            try {
+                const buffer = await file.arrayBuffer();
+                const workbook = XLSX.read(buffer, { type: "array" });
+                const firstSheetName = workbook.SheetNames[0];
+
+                if (!firstSheetName) {
+                    throw new Error("El archivo no contiene hojas.");
+                }
+
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+                    header: 1,
+                    raw: true,
+                    defval: ""
+                });
+
+                if (!rows.length) {
+                    throw new Error("El archivo no contiene datos.");
+                }
+
+                const headers = rows[0].map(normalizarCabecera);
+                const fechaIndex = headers.indexOf("fecha");
+                const numeroEmpleadoIndex = headers.indexOf("numeroempleado");
+                const nombreStaffIndex = headers.indexOf("nombrestaff");
+                const ticketPromedioIndex = headers.indexOf("ticketpromedio");
+
+                if (fechaIndex === -1 || numeroEmpleadoIndex === -1 || ticketPromedioIndex === -1) {
+                    throw new Error("La plantilla debe incluir Fecha, NumeroEmpleado y TicketPromedio. NombreStaff es opcional.");
+                }
+
+                const errores = [];
+                const registros = [];
+                const duplicados = new Set();
+
+                for (let index = 1; index < rows.length; index++) {
+                    const row = rows[index];
+                    const emptyRow = row.every(cell => String(cell ?? "").trim() === "");
+                    if (emptyRow) {
+                        continue;
+                    }
+
+                    const fecha = parseExcelDate(row[fechaIndex]);
+                    if (!fecha) {
+                        errores.push(`Fila ${index + 1}: Fecha inválida.`);
+                        continue;
+                    }
+
+                    const fechaNormalizada = formatearFecha(fecha);
+                    if (fechaNormalizada < monthStart || fechaNormalizada > monthEnd) {
+                        errores.push(`Fila ${index + 1}: la fecha ${fechaNormalizada} no pertenece al mes en curso.`);
+                        continue;
+                    }
+
+                    const numeroEmpleado = String(row[numeroEmpleadoIndex] ?? "").trim();
+                    if (!numeroEmpleado) {
+                        errores.push(`Fila ${index + 1}: NumeroEmpleado es obligatorio.`);
+                        continue;
+                    }
+
+                    const ticketPromedio = parseTicketPromedio(row[ticketPromedioIndex]);
+                    if (ticketPromedio === null) {
+                        errores.push(`Fila ${index + 1}: TicketPromedio debe ser entero mayor o igual a cero.`);
+                        continue;
+                    }
+
+                    const llave = `${fechaNormalizada}|${numeroEmpleado}`;
+                    if (duplicados.has(llave)) {
+                        errores.push(`Fila ${index + 1}: combinación duplicada para ${fechaNormalizada} + ${numeroEmpleado}.`);
+                        continue;
+                    }
+
+                    duplicados.add(llave);
+                    registros.push({
+                        fecha: fechaNormalizada,
+                        numeroEmpleado,
+                        nombreStaff: nombreStaffIndex >= 0 ? String(row[nombreStaffIndex] ?? "").trim() : "",
+                        ticketPromedio
+                    });
+                }
+
+                if (!registros.length) {
+                    throw new Error("El archivo no contiene filas válidas para procesar.");
+                }
+
+                if (errores.length) {
+                    const erroresDuplicados = errores.filter(error => error.includes("combinación duplicada"));
+                    if (erroresDuplicados.length === errores.length) {
+                        mostrarMensaje("", "");
+                        mostrarModalLista(
+                            "Registros repetidos en el archivo",
+                            "El archivo contiene combinaciones repetidas de Fecha + NumeroEmpleado.",
+                            erroresDuplicados
+                        );
+                        return;
+                    }
+
+                    const primerError = errores[0];
+                    mostrarMensaje("danger", `Se detectaron ${errores.length} error(es) de formato. Primer detalle: ${primerError}`);
+                    return;
+                }
+
+                filasCargadas = registros;
+                const existentes = await validarExistentes();
+
+                if (Array.isArray(existentes) && existentes.length > 0) {
+                    filasCargadas = [];
+                    mostrarMensaje("", "");
+                    mostrarModalLista(
+                        "Registros ya guardados",
+                        "Ya existen registros guardados para una o más combinaciones de Fecha + NumeroEmpleado.",
+                        existentes.map(item => `${item.fecha.substring(0, 10)} - ${item.numeroEmpleado}`)
+                    );
+                    return;
+                }
+
+                renderPreview();
+                btnGuardar.disabled = false;
+                mostrarMensaje("success", "Archivo validado correctamente. Ya puede guardar la carga masiva.");
+            } catch (error) {
+                filasCargadas = [];
+                btnGuardar.disabled = true;
+                previewCard.classList.add("d-none");
+                previewCard.style.display = "none";
+                mostrarMensaje("danger", error.message || "Ocurrió un error al procesar el archivo.");
+            }
+        };
+
+        const guardarCarga = async () => {
+            if (!filasCargadas.length) {
+                mostrarMensaje("warning", "No hay filas válidas para guardar.");
+                return;
+            }
+
+            btnGuardar.disabled = true;
+            mostrarMensaje("info", "Guardando carga masiva...", 0);
+
+            try {
+                const response = await fetch(`${window.location.pathname}?handler=Guardar`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify({
+                        items: filasCargadas
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeError(response));
+                }
+
+                const resultado = await response.json();
+                limpiarInterfaz(false);
+                mostrarMensaje("success", resultado.mensaje || "Carga masiva procesada correctamente.");
+            } catch (error) {
+                btnGuardar.disabled = false;
+                mostrarMensaje("danger", error.message || "No se pudo guardar la carga masiva.");
+            }
+        };
+
+        const descargarPlantilla = () => {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet([["Fecha", "NumeroEmpleado", "NombreStaff", "TicketPromedio"]]);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla");
+            XLSX.writeFile(workbook, "Plantilla_TicketStaff.xlsx");
+        };
+
+        const descargarStaffBase = async (numeroSupervisor) => {
+            const query = numeroSupervisor
+                ? `?handler=DescargarStaff&numeroSupervisor=${encodeURIComponent(numeroSupervisor)}`
+                : "?handler=DescargarStaff";
+            const response = await fetch(`${window.location.pathname}${query}`);
+
+            if (!response.ok) {
+                throw new Error(await obtenerMensajeError(response));
+            }
+
+            const data = await response.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                throw new Error("No se encontraron empleados para la descarga solicitada.");
+            }
+
+            const rows = [["NumeroEmpleado", "NombreStaff"], ...data.map(item => [item.numeroEmpleado, item.nombreStaff || ""])];
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Staff");
+            const suffix = numeroSupervisor ? `Supervisor_${numeroSupervisor}` : "Todos";
+            XLSX.writeFile(workbook, `StaffBase_${suffix}.xlsx`);
+        };
+
+        document.getElementById("btnLeerArchivo")?.addEventListener("click", () => {
+            void procesarArchivo();
+        });
+
+        btnGuardar?.addEventListener("click", () => {
+            void guardarCarga();
+        });
+
+        document.getElementById("btnLimpiar")?.addEventListener("click", () => {
+            limpiarInterfaz();
+        });
+
+        document.getElementById("btnDescargarPlantilla")?.addEventListener("click", () => {
+            descargarPlantilla();
+        });
+
+        document.getElementById("btnDescargarStaffTodos")?.addEventListener("click", async () => {
+            mostrarMensaje("info", "Descargando staff base...", 0);
+            try {
+                await descargarStaffBase("");
+                mostrarMensaje("success", "Descarga completada.");
+            } catch (error) {
+                mostrarMensaje("danger", error.message || "No se pudo descargar el staff base.");
+            }
+        });
+
+        document.getElementById("btnDescargarStaffSupervisor")?.addEventListener("click", async () => {
+            const numeroSupervisor = supervisorStaffInput.value.trim();
+            if (!numeroSupervisor) {
+                mostrarMensaje("warning", "Debe indicar el número de supervisor para esa descarga.");
+                return;
+            }
+
+            mostrarMensaje("info", "Descargando staff por supervisor...", 0);
+            try {
+                await descargarStaffBase(numeroSupervisor);
+                mostrarMensaje("success", "Descarga completada.");
+            } catch (error) {
+                mostrarMensaje("danger", error.message || "No se pudo descargar el staff por supervisor.");
+            }
+        });
+    </script>
+}

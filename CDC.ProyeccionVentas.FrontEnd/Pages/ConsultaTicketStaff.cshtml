@@ -1,0 +1,768 @@
+@page
+@model ConsultaTicketStaffModel
+@{
+    ViewData["Title"] = "Consultar Ticket Promedio Staff";
+    ViewData["ShowSidebar"] = true;
+    ViewData["HtmlClass"] = "programacion-screen-page";
+    ViewData["BodyClass"] = "programacion-screen-page";
+    ViewData["AppContainerClass"] = "app-container-programacion-screen";
+    ViewData["MainContentClass"] = "main-content-area-programacion-screen";
+    ViewData["MainBodyClass"] = "main-body-programacion";
+    ViewData["PageFrameClass"] = "page-frame-programacion";
+    var totalResultados = Model.Resultados?.Count ?? 0;
+    var mesActual = DateTime.Today.Month;
+    var initialMessageClass = string.IsNullOrWhiteSpace(Model.MensajeError)
+        ? "page-status-message screen-status upload-screen-status"
+        : "page-status-message screen-status upload-screen-status is-danger";
+}
+
+<div class="screen-shell consulta-proyecciones-shell ticket-staff-shell">
+    <section class="screen-card screen-card-header screen-card-header-compact consulta-proyecciones-header">
+        <div class="screen-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+            <span id="mensajeDinamico" class="@initialMessageClass" aria-live="polite">@Model.MensajeError</span>
+        </div>
+    </section>
+
+    <form method="post" class="row g-3 mb-4 screen-card screen-card-form" id="form-filtros">
+        @Html.AntiForgeryToken()
+        <div class="col-md-4">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" asp-for="Filtro.FechaInicio" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" asp-for="Filtro.FechaFin" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Número Empleado (opcional)</label>
+            <input type="text" class="form-control" asp-for="Filtro.NumeroEmpleado" maxlength="20" placeholder="Ej. 00031265" />
+        </div>
+    </form>
+
+    <section class="screen-card screen-card-actions">
+        <div class="consulta-toolbar-layout" id="botonera">
+            <div class="consulta-toolbar-head">
+                <div class="btn-group consulta-toolbar-actions">
+                    <button type="submit" class="btn btn-primary custom-btn-effect btn-buscar" form="form-filtros">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                    <button id="btnLimpiar" class="btn btn-outline-secondary custom-btn-effect btn-limpiar">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </button>
+                    <button id="btnRecargar" class="btn btn-outline-primary custom-btn-effect btn-recargar">
+                        <i class="bi bi-arrow-clockwise"></i> Recargar
+                    </button>
+                    <button id="btnExportarExcel" class="btn btn-outline-success custom-btn-effect btn-exportar" @(totalResultados == 0 ? "disabled" : null)>
+                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                    </button>
+                    <button id="btnEliminarMes" type="button" class="btn btn-outline-danger custom-btn-effect btn-eliminar-mes">
+                        <i class="bi bi-trash me-1"></i> Eliminar Mes
+                    </button>
+                </div>
+                <span class="badge bg-info text-dark fs-6 py-2 px-3 consulta-toolbar-badge">
+                    Filas: <span id="filasCount">@totalResultados</span>
+                </span>
+            </div>
+            <div class="consulta-toolbar-filter-row">
+                <div class="consulta-view-tools">
+                    <div class="consulta-view-filter">
+                        <label for="filtroVistaAvanzado" class="form-label mb-1">Filtro de vista avanzado</label>
+                        <div class="consulta-view-filter-box">
+                            <i class="bi bi-search"></i>
+                            <input id="filtroVistaAvanzado"
+                                   type="text"
+                                   class="form-control"
+                                   placeholder="Buscar por fecha, empleado, staff o ticket promedio" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @if (Model.Resultados != null && Model.Resultados.Any())
+    {
+        <section class="screen-card screen-card-table">
+            <div class="table-responsive-scroll">
+                <table class="table table-bordered table-striped" id="tablaResultados">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="fecha" data-sort-type="date">
+                                    <span>Fecha</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="numeroEmpleado" data-sort-type="text">
+                                    <span>Número Empleado</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="staff" data-sort-type="text">
+                                    <span>Staff</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="ticketPromedio" data-sort-type="number">
+                                    <span>Ticket Promedio</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Resultados)
+                        {
+                            <tr data-id="@item.Id">
+                                <td>@item.Fecha.ToString("yyyy-MM-dd")</td>
+                                <td>@item.NumeroEmpleado</td>
+                                <td class="@(!item.ExisteEnCDC ? "table-warning" : string.Empty)">
+                                    <div>@item.NombreStaff</div>
+                                    @if (!item.ExisteEnCDC)
+                                    {
+                                        <small class="text-danger fw-semibold">Revisar en CDC</small>
+                                    }
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control input-ticket-promedio"
+                                           data-field="ticketPromedio"
+                                           inputmode="numeric"
+                                           autocomplete="off"
+                                           value="@item.TicketPromedio" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div id="sinCoincidenciasVista" class="alert alert-info text-center mt-3 d-none">
+                No hay coincidencias con el filtro de vista aplicado.
+            </div>
+        </section>
+    }
+    else if (Model.MostrarMensajeSinResultados)
+    {
+        <div class="alert alert-info text-center mt-4">
+            No se encontraron resultados para los filtros aplicados.
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="deleteMonthModal" tabindex="-1" aria-labelledby="deleteMonthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteMonthModalLabel">Eliminar Ticket Promedio por Mes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="anioEliminar" class="form-label">Año</label>
+                    <select id="anioEliminar" class="form-select">
+                        <option value="">Seleccione un año</option>
+                        @foreach (var anio in Model.AniosEliminar)
+                        {
+                            if (anio == Model.AnioActual)
+                            {
+                                <option value="@anio" selected>@anio</option>
+                            }
+                            else
+                            {
+                                <option value="@anio">@anio</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mesEliminar" class="form-label">Mes</label>
+                    <select id="mesEliminar" class="form-select">
+                        <option value="">Seleccione un mes</option>
+                        @foreach (var mes in Model.MesesEliminar)
+                        {
+                            if (mes.Valor == mesActual)
+                            {
+                                <option value="@mes.Valor" selected>@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                            }
+                            else
+                            {
+                                <option value="@mes.Valor">@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="alert alert-warning mb-0">
+                    Esta acción eliminará todos los registros guardados del mes seleccionado.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary custom-modal-btn" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger custom-modal-btn" id="btnSolicitarConfirmacionEliminar">
+                    <i class="bi bi-trash me-1"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-exclamation-octagon-fill text-danger fs-1 mb-3"></i>
+                <p id="textoConfirmacionEliminar">Se eliminarán todos los registros del mes seleccionado. ¿Desea continuar?</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary custom-btn-effect" data-bs-dismiss="modal" id="btnCancelarConfirmacionEliminar">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger custom-btn-effect" id="btnConfirmarEliminarFinal">
+                    <i class="bi bi-trash me-1"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let messageTimeoutId = null;
+        const rowSaveStates = new Map();
+        const tablaResultados = document.getElementById("tablaResultados");
+        const tablaResultadosBody = tablaResultados?.querySelector("tbody") ?? null;
+        const filtroVistaAvanzado = document.getElementById("filtroVistaAvanzado");
+        const sinCoincidenciasVista = document.getElementById("sinCoincidenciasVista");
+        const badgeFilas = document.getElementById("filasCount");
+        const btnExportarExcel = document.getElementById("btnExportarExcel");
+        const guardarUrl = `${window.location.pathname}?handler=Guardar`;
+        const eliminarUrl = `${window.location.pathname}?handler=Eliminar`;
+        const deleteMonthModal = new bootstrap.Modal(document.getElementById("deleteMonthModal"));
+        const confirmDeleteModal = new bootstrap.Modal(document.getElementById("confirmDeleteModal"));
+        const sortState = {
+            key: "",
+            type: "text",
+            direction: "asc"
+        };
+        const nombresMeses = [
+            "",
+            "enero",
+            "febrero",
+            "marzo",
+            "abril",
+            "mayo",
+            "junio",
+            "julio",
+            "agosto",
+            "septiembre",
+            "octubre",
+            "noviembre",
+            "diciembre"
+        ];
+
+        const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+
+        const limpiarTimeoutMensaje = () => {
+            if (messageTimeoutId) {
+                clearTimeout(messageTimeoutId);
+                messageTimeoutId = null;
+            }
+        };
+
+        const mostrarMensaje = (tipo, texto, duracion = 5000) => {
+            limpiarTimeoutMensaje();
+            const contenedor = document.getElementById("mensajeDinamico");
+
+            if (!texto) {
+                contenedor.textContent = "";
+                contenedor.className = "page-status-message screen-status upload-screen-status";
+                return;
+            }
+
+            contenedor.textContent = texto;
+            contenedor.className = `page-status-message screen-status upload-screen-status is-${tipo}`;
+
+            if (duracion > 0) {
+                messageTimeoutId = setTimeout(() => {
+                    contenedor.textContent = "";
+                    contenedor.className = "page-status-message screen-status upload-screen-status";
+                    messageTimeoutId = null;
+                }, duracion);
+            }
+        };
+
+        const normalizarTicket = (valor) => valor.trim();
+        const esValorTicketParcialValido = (valor) => /^\d*$/.test(valor);
+
+        const construirValorEditado = (input, texto) => {
+            const inicio = input.selectionStart ?? input.value.length;
+            const fin = input.selectionEnd ?? input.value.length;
+            return `${input.value.slice(0, inicio)}${texto}${input.value.slice(fin)}`;
+        };
+
+        const obtenerTicketNormalizado = (input, emptyAsZero = false) => {
+            const valor = normalizarTicket(input.value);
+            if (!valor) {
+                return emptyAsZero ? "0" : "";
+            }
+
+            const numero = Number(valor);
+            if (!Number.isFinite(numero) || !Number.isInteger(numero) || numero < 0) {
+                return "";
+            }
+
+            return String(numero);
+        };
+
+        const validarTicketInput = (input) => {
+            const valor = normalizarTicket(input.value);
+            if (!valor) {
+                input.classList.remove("is-invalid");
+                return true;
+            }
+
+            const numero = Number(valor);
+            const esValido = Number.isFinite(numero) && Number.isInteger(numero) && numero >= 0;
+            input.classList.toggle("is-invalid", !esValido);
+            return esValido;
+        };
+
+        const obtenerEstadoFila = (rowId) => {
+            if (!rowSaveStates.has(rowId)) {
+                rowSaveStates.set(rowId, {
+                    saving: false,
+                    queued: null
+                });
+            }
+
+            return rowSaveStates.get(rowId);
+        };
+
+        const obtenerMensajeErrorDesdeResponse = async (response) => {
+            const contentType = response.headers.get("content-type") || "";
+            let errorMessage = `HTTP ${response.status}`;
+
+            if (contentType.includes("application/json")) {
+                const errorData = await response.json();
+                return errorData.error || errorData.mensaje || errorData.message || errorMessage;
+            }
+
+            const errorText = await response.text();
+            const errorTextPlano = errorText.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            return errorTextPlano || errorMessage;
+        };
+
+        const normalizarTextoBusqueda = (valor) => (valor || "")
+            .toString()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+
+        const obtenerFilasTabla = () => Array.from(tablaResultadosBody?.querySelectorAll("tr") ?? []);
+
+        const obtenerTextoFila = (fila) => {
+            const celdas = fila.querySelectorAll("td");
+            const fecha = celdas[0]?.innerText?.trim() ?? "";
+            const numeroEmpleado = celdas[1]?.innerText?.trim() ?? "";
+            const staff = celdas[2]?.querySelector("div")?.innerText?.trim() ?? celdas[2]?.innerText?.trim() ?? "";
+            const advertencia = celdas[2]?.querySelector("small")?.innerText?.trim() ?? "";
+            const ticketPromedio = celdas[3]?.querySelector("input")?.value?.trim() ?? "";
+            return normalizarTextoBusqueda(`${fecha} ${numeroEmpleado} ${staff} ${advertencia} ${ticketPromedio}`);
+        };
+
+        const obtenerValorOrden = (fila, key, type) => {
+            const celdas = fila.querySelectorAll("td");
+            switch (key) {
+                case "fecha":
+                    return celdas[0]?.innerText?.trim() ?? "";
+                case "numeroEmpleado":
+                    return celdas[1]?.innerText?.trim() ?? "";
+                case "staff":
+                    return celdas[2]?.querySelector("div")?.innerText?.trim() ?? celdas[2]?.innerText?.trim() ?? "";
+                case "ticketPromedio":
+                    return celdas[3]?.querySelector("input")?.value?.trim() ?? "0";
+                default:
+                    return "";
+            }
+        };
+
+        const compararValores = (valorA, valorB, type) => {
+            if (type === "number") {
+                return Number(valorA || 0) - Number(valorB || 0);
+            }
+
+            if (type === "date") {
+                return Date.parse(valorA || "") - Date.parse(valorB || "");
+            }
+
+            return String(valorA || "").localeCompare(String(valorB || ""), "es", {
+                sensitivity: "base",
+                numeric: true
+            });
+        };
+
+        const actualizarIndicadoresOrden = () => {
+            document.querySelectorAll(".table-sort-button").forEach(button => {
+                const indicator = button.querySelector(".sort-indicator");
+                const isActive = button.dataset.sortKey === sortState.key;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-sort", isActive ? (sortState.direction === "asc" ? "ascending" : "descending") : "none");
+
+                if (!indicator) {
+                    return;
+                }
+
+                indicator.textContent = !isActive ? "↕" : sortState.direction === "asc" ? "↑" : "↓";
+            });
+        };
+
+        const actualizarResumenVista = () => {
+            const filas = obtenerFilasTabla();
+            const visibles = filas.filter(fila => !fila.hidden);
+            if (badgeFilas) {
+                badgeFilas.textContent = String(visibles.length);
+            }
+
+            if (btnExportarExcel) {
+                btnExportarExcel.disabled = visibles.length === 0;
+            }
+
+            if (sinCoincidenciasVista) {
+                sinCoincidenciasVista.classList.toggle("d-none", visibles.length > 0);
+            }
+        };
+
+        const aplicarFiltroVista = () => {
+            const consulta = normalizarTextoBusqueda(filtroVistaAvanzado?.value ?? "");
+            const terminos = consulta.split(/\s+/).filter(Boolean);
+
+            obtenerFilasTabla().forEach(fila => {
+                const textoFila = obtenerTextoFila(fila);
+                fila.hidden = terminos.length > 0 && !terminos.every(termino => textoFila.includes(termino));
+            });
+        };
+
+        const aplicarOrdenActual = () => {
+            if (!tablaResultadosBody || !sortState.key) {
+                actualizarIndicadoresOrden();
+                return;
+            }
+
+            const filasOrdenadas = obtenerFilasTabla().sort((filaA, filaB) => {
+                const valorA = obtenerValorOrden(filaA, sortState.key, sortState.type);
+                const valorB = obtenerValorOrden(filaB, sortState.key, sortState.type);
+                const resultado = compararValores(valorA, valorB, sortState.type);
+                return sortState.direction === "asc" ? resultado : -resultado;
+            });
+
+            filasOrdenadas.forEach(fila => tablaResultadosBody.appendChild(fila));
+            actualizarIndicadoresOrden();
+        };
+
+        const aplicarVistaTabla = () => {
+            aplicarFiltroVista();
+            aplicarOrdenActual();
+            actualizarResumenVista();
+        };
+
+        const restaurarValorOriginal = (input) => {
+            const valorOriginal = input.dataset.originalValue || "0";
+            input.value = valorOriginal;
+            input.classList.remove("is-invalid");
+        };
+
+        const manejarKeydownEditable = (event, input) => {
+            if (event.ctrlKey || event.metaKey || event.altKey) {
+                return;
+            }
+
+            const teclasPermitidas = new Set([
+                "Backspace",
+                "Delete",
+                "Tab",
+                "Enter",
+                "Escape",
+                "ArrowLeft",
+                "ArrowRight",
+                "ArrowUp",
+                "ArrowDown",
+                "Home",
+                "End"
+            ]);
+
+            if (teclasPermitidas.has(event.key) || event.key.length !== 1) {
+                return;
+            }
+
+            const siguienteValor = construirValorEditado(input, event.key);
+            if (!esValorTicketParcialValido(siguienteValor)) {
+                event.preventDefault();
+            }
+        };
+
+        const manejarPasteEditable = (event, input) => {
+            const textoPegado = event.clipboardData?.getData("text") ?? "";
+            const siguienteValor = construirValorEditado(input, textoPegado);
+            if (!esValorTicketParcialValido(siguienteValor)) {
+                event.preventDefault();
+            }
+        };
+
+        const construirPayloadRegistro = (fila) => {
+            const rowId = Number(fila.dataset.id);
+            const ticketInput = fila.querySelector('[data-field="ticketPromedio"]');
+
+            if (!Number.isInteger(rowId) || !ticketInput || !validarTicketInput(ticketInput)) {
+                return null;
+            }
+
+            return {
+                id: rowId,
+                ticketPromedio: Number(obtenerTicketNormalizado(ticketInput, true))
+            };
+        };
+
+        const guardarRegistro = async (fila, payload) => {
+            const estadoFila = obtenerEstadoFila(payload.id);
+            estadoFila.saving = true;
+            fila.dataset.saving = "true";
+            mostrarMensaje("info", "Modificando...", 0);
+
+            try {
+                const response = await fetch(guardarUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeErrorDesdeResponse(response));
+                }
+
+                const resultado = await response.json();
+                const ticketInput = fila.querySelector('[data-field="ticketPromedio"]');
+                ticketInput.value = String(resultado.ticketPromedio);
+                ticketInput.dataset.originalValue = String(resultado.ticketPromedio);
+                ticketInput.classList.remove("is-invalid");
+                aplicarVistaTabla();
+                mostrarMensaje("success", resultado.mensaje || "Ticket promedio actualizado correctamente.", 1800);
+            } catch (error) {
+                const ticketInput = fila.querySelector('[data-field="ticketPromedio"]');
+                restaurarValorOriginal(ticketInput);
+                aplicarVistaTabla();
+                mostrarMensaje("danger", `Ocurrió un error al guardar los cambios: ${error.message}`);
+            } finally {
+                estadoFila.saving = false;
+                fila.dataset.saving = "false";
+
+                if (estadoFila.queued) {
+                    const queued = estadoFila.queued;
+                    estadoFila.queued = null;
+                    await guardarRegistro(fila, queued);
+                }
+            }
+        };
+
+        const encolarGuardado = (fila, payload) => {
+            const estadoFila = obtenerEstadoFila(payload.id);
+            if (estadoFila.saving) {
+                estadoFila.queued = payload;
+                return;
+            }
+
+            void guardarRegistro(fila, payload);
+        };
+
+        const manejarBlurEditable = (input) => {
+            const fila = input.closest("tr");
+            if (!fila) {
+                return;
+            }
+
+            if (normalizarTicket(input.value) === "") {
+                input.value = "0";
+            }
+
+            if (!validarTicketInput(input)) {
+                restaurarValorOriginal(input);
+                mostrarMensaje("danger", "Ticket Promedio debe ser un número entero mayor o igual a cero.");
+                return;
+            }
+
+            const valorActual = obtenerTicketNormalizado(input, true);
+            if (valorActual === input.dataset.originalValue) {
+                input.value = valorActual;
+                input.classList.remove("is-invalid");
+                return;
+            }
+
+            const payload = construirPayloadRegistro(fila);
+            if (!payload) {
+                restaurarValorOriginal(input);
+                mostrarMensaje("danger", "Ticket Promedio debe ser un número entero mayor o igual a cero.");
+                return;
+            }
+
+            encolarGuardado(fila, payload);
+        };
+
+        const obtenerSeleccionEliminar = () => {
+            const mes = Number(document.getElementById("mesEliminar")?.value);
+            const anio = Number(document.getElementById("anioEliminar")?.value);
+
+            if (!mes || !anio) {
+                return null;
+            }
+
+            const ultimoDia = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+            return {
+                mes,
+                anio,
+                fechaInicio: `${anio}-${String(mes).padStart(2, "0")}-01`,
+                fechaFin: `${anio}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`,
+                etiquetaMes: `${nombresMeses[mes]} ${anio}`
+            };
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            tablaResultados?.querySelectorAll('[data-field="ticketPromedio"]').forEach(input => {
+                input.dataset.originalValue = obtenerTicketNormalizado(input, true);
+                input.addEventListener("keydown", (event) => manejarKeydownEditable(event, input));
+                input.addEventListener("paste", (event) => manejarPasteEditable(event, input));
+                input.addEventListener("drop", (event) => event.preventDefault());
+                input.addEventListener("input", () => input.classList.toggle("is-invalid", !esValorTicketParcialValido(input.value)));
+                input.addEventListener("blur", () => manejarBlurEditable(input));
+            });
+
+            filtroVistaAvanzado?.addEventListener("input", () => aplicarVistaTabla());
+
+            document.querySelectorAll(".table-sort-button").forEach(button => {
+                button.addEventListener("click", () => {
+                    const nextKey = button.dataset.sortKey || "";
+                    const nextType = button.dataset.sortType || "text";
+
+                    if (sortState.key === nextKey) {
+                        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+                    } else {
+                        sortState.key = nextKey;
+                        sortState.type = nextType;
+                        sortState.direction = "asc";
+                    }
+
+                    aplicarVistaTabla();
+                });
+            });
+
+            actualizarIndicadoresOrden();
+            actualizarResumenVista();
+        });
+
+        document.getElementById("btnLimpiar")?.addEventListener("click", function (e) {
+            e.preventDefault();
+            location.href = location.pathname;
+        });
+
+        document.getElementById("btnRecargar")?.addEventListener("click", function (e) {
+            e.preventDefault();
+            document.getElementById("form-filtros").submit();
+        });
+
+        document.getElementById("btnExportarExcel")?.addEventListener("click", function () {
+            const filas = document.querySelectorAll("#tablaResultados tbody tr:not([hidden])");
+            if (filas.length === 0) {
+                return;
+            }
+
+            const data = [["Fecha", "NumeroEmpleado", "NombreStaff", "TicketPromedio"]];
+            filas.forEach(fila => {
+                const celdas = fila.querySelectorAll("td");
+                data.push([
+                    celdas[0].innerText,
+                    celdas[1].innerText,
+                    celdas[2].querySelector("div")?.innerText || celdas[2].innerText,
+                    celdas[3].querySelector("input")?.value || ""
+                ]);
+            });
+
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "TicketStaff");
+            XLSX.writeFile(workbook, "Consulta_TicketStaff.xlsx");
+        });
+
+        document.getElementById("btnEliminarMes")?.addEventListener("click", function () {
+            deleteMonthModal.show();
+        });
+
+        document.getElementById("btnSolicitarConfirmacionEliminar")?.addEventListener("click", function () {
+            const seleccion = obtenerSeleccionEliminar();
+            if (!seleccion) {
+                mostrarMensaje("warning", "Debe seleccionar un mes y un año para eliminar.");
+                return;
+            }
+
+            document.getElementById("textoConfirmacionEliminar").innerText =
+                `Se eliminarán todos los registros de ${seleccion.etiquetaMes}. ¿Desea continuar?`;
+
+            deleteMonthModal.hide();
+            confirmDeleteModal.show();
+        });
+
+        document.getElementById("btnCancelarConfirmacionEliminar")?.addEventListener("click", function () {
+            confirmDeleteModal.hide();
+            setTimeout(() => deleteMonthModal.show(), 150);
+        });
+
+        document.getElementById("btnConfirmarEliminarFinal")?.addEventListener("click", async function () {
+            const seleccion = obtenerSeleccionEliminar();
+            if (!seleccion) {
+                confirmDeleteModal.hide();
+                mostrarMensaje("warning", "Debe seleccionar un mes y un año válidos.");
+                return;
+            }
+
+            try {
+                const response = await fetch(eliminarUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify({
+                        fechaInicio: seleccion.fechaInicio,
+                        fechaFin: seleccion.fechaFin
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeErrorDesdeResponse(response));
+                }
+
+                const resultado = await response.json();
+                confirmDeleteModal.hide();
+                deleteMonthModal.hide();
+                mostrarMensaje(resultado.registrosEliminados > 0 ? "success" : "info", resultado.mensaje || "Operación completada.");
+
+                setTimeout(() => {
+                    document.getElementById("form-filtros").submit();
+                }, 1400);
+            } catch (error) {
+                mostrarMensaje("danger", `Ocurrió un error al eliminar los registros: ${error.message}`);
+            }
+        });
+    </script>
+}
