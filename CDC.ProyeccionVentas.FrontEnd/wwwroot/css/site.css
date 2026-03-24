@@ -1848,6 +1848,7 @@ body.upload-screen-page {
 .consulta-proyecciones-shell .screen-card-form {
     position: relative;
     z-index: 30;
+    overflow: visible;
 }
 
 .main-body-programacion {
@@ -1960,7 +1961,7 @@ body.programacion-screen-page {
 .consulta-proyecciones-shell {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .consulta-proyecciones-shell .dropdown {

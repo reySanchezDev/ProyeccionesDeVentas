@@ -3,10 +3,17 @@ using CDC.ProyeccionVentas.Infraestructura.Repositorios;
 using CDC.ProyeccionVentas.AuthService.Servicios;
 using CDC.ProyeccionVentas.Dominio.Servicios;
 using CDC.ProyeccionVentas.Infraestructura.Servicios;
+using Microsoft.Extensions.Configuration;
 
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration
+    .SetBasePath(builder.Environment.ContentRootPath)
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 var cdcConnectionString = builder.Configuration.GetConnectionString("CDC")
     ?? throw new InvalidOperationException("Falta la cadena de conexión 'CDC'.");
 var reportesLsConnectionString = builder.Configuration.GetConnectionString("ReportesLS")
