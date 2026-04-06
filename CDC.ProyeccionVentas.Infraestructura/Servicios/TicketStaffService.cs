@@ -2,6 +2,7 @@ using CDC.ProyeccionVentas.Dominio.Entidades;
 using CDC.ProyeccionVentas.Dominio.Interfaces;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Linq;
 
 namespace CDC.ProyeccionVentas.Infraestructura.Servicios
 {
@@ -14,9 +15,39 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
             _reportesLsConnectionString = reportesLsConnectionString;
         }
 
-        public async Task<List<TicketStaffDownloadItem>> DescargarStaffBaseAsync(string? numeroSupervisor)
+        public async Task<List<string>> ObtenerCatalogoPuestosAsync()
+        {
+            var resultado = new List<string>();
+
+            using var connection = new SqlConnection(_reportesLsConnectionString);
+            using var command = new SqlCommand("dbo.sp_catologoPuesto", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            await connection.OpenAsync();
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                resultado.Add(GetString(reader, "Puesto"));
+            }
+
+            return resultado
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        public async Task<List<TicketStaffDownloadItem>> DescargarPlantillaAsync(List<string> puestos)
         {
             var resultado = new List<TicketStaffDownloadItem>();
+            var puestosNormalizados = (puestos ?? new List<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             using var connection = new SqlConnection(_reportesLsConnectionString);
             using var command = new SqlCommand("dbo.sp_ProyeccionTicketStaff_DescargarStaffBase", connection)
@@ -24,10 +55,10 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                 CommandType = CommandType.StoredProcedure
             };
 
-            command.Parameters.Add("@NumeroSupervisor", SqlDbType.VarChar, 20).Value =
-                string.IsNullOrWhiteSpace(numeroSupervisor)
+            command.Parameters.Add("@Puestos", SqlDbType.NVarChar, -1).Value =
+                puestosNormalizados.Count == 0
                     ? DBNull.Value
-                    : numeroSupervisor.Trim();
+                    : string.Join(",", puestosNormalizados);
 
             await connection.OpenAsync();
 
@@ -37,7 +68,10 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                 resultado.Add(new TicketStaffDownloadItem
                 {
                     NumeroEmpleado = GetString(reader, "NumeroEmpleado"),
-                    NombreStaff = GetString(reader, "NombreStaff")
+                    NombreStaff = GetString(reader, "NombreStaff"),
+                    Puesto = GetString(reader, "Puesto"),
+                    Ubicacion = GetString(reader, "Ubicacion"),
+                    TicketPromedio = GetNullableInt32(reader, "TicketPromedio")
                 });
             }
 
@@ -66,7 +100,8 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
             {
                 resultado.Add(new TicketStaffExistingItem
                 {
-                    Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
+                    Mes = GetInt32(reader, "Mes"),
+                    Ano = GetInt32(reader, "Ano"),
                     NumeroEmpleado = GetString(reader, "NumeroEmpleado")
                 });
             }
@@ -114,8 +149,8 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                 CommandType = CommandType.StoredProcedure
             };
 
-            command.Parameters.Add("@FechaInicio", SqlDbType.Date).Value = filter.FechaInicio.Date;
-            command.Parameters.Add("@FechaFin", SqlDbType.Date).Value = filter.FechaFin.Date;
+            command.Parameters.Add("@Mes", SqlDbType.Int).Value = filter.Mes;
+            command.Parameters.Add("@Ano", SqlDbType.Int).Value = filter.Ano;
             command.Parameters.Add("@NumeroEmpleado", SqlDbType.VarChar, 20).Value =
                 string.IsNullOrWhiteSpace(filter.NumeroEmpleado)
                     ? DBNull.Value
@@ -130,6 +165,8 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                 {
                     Id = GetInt32(reader, "Id"),
                     Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
+                    Mes = GetInt32(reader, "Mes"),
+                    Ano = GetInt32(reader, "Ano"),
                     NumeroEmpleado = GetString(reader, "NumeroEmpleado"),
                     NombreStaff = GetString(reader, "NombreStaff"),
                     ExisteEnCDC = GetBoolean(reader, "ExisteEnCDC"),
@@ -183,8 +220,8 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                 CommandType = CommandType.StoredProcedure
             };
 
-            command.Parameters.Add("@FechaInicio", SqlDbType.Date).Value = request.FechaInicio.Date;
-            command.Parameters.Add("@FechaFin", SqlDbType.Date).Value = request.FechaFin.Date;
+            command.Parameters.Add("@Mes", SqlDbType.Int).Value = request.Mes;
+            command.Parameters.Add("@Ano", SqlDbType.Int).Value = request.Ano;
 
             await connection.OpenAsync();
 
@@ -204,7 +241,6 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
         private static DataTable BuildUploadDataTable(IEnumerable<TicketStaffBulkUploadItem>? items)
         {
             var table = new DataTable();
-            table.Columns.Add("Fecha", typeof(DateTime));
             table.Columns.Add("NumeroEmpleado", typeof(string));
             table.Columns.Add("TicketPromedio", typeof(int));
 
@@ -217,7 +253,7 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
             {
                 var numeroEmpleado = item.NumeroEmpleado?.Trim() ?? string.Empty;
                 var ticketPromedio = item.TicketPromedio < 0 ? 0 : item.TicketPromedio;
-                table.Rows.Add(item.Fecha, numeroEmpleado, ticketPromedio);
+                table.Rows.Add(numeroEmpleado, ticketPromedio);
             }
 
             return table;
@@ -234,6 +270,13 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
         {
             return reader[columnName] == DBNull.Value
                 ? 0
+                : Convert.ToInt32(reader[columnName]);
+        }
+
+        private static int? GetNullableInt32(SqlDataReader reader, string columnName)
+        {
+            return reader[columnName] == DBNull.Value
+                ? null
                 : Convert.ToInt32(reader[columnName]);
         }
 

@@ -8,47 +8,75 @@
             return;
         }
 
-        navGroups.forEach((group) => {
-            const toggle = group.querySelector("[data-nav-group-toggle]");
-            const panel = group.querySelector("[data-nav-group-panel]");
+        const accordionStorageKey = "cdc-portal-nav-group-open-v3";
+        const groups = Array.from(navGroups)
+            .map((group) => {
+                const toggle = group.querySelector("[data-nav-group-toggle]");
+                const panel = group.querySelector("[data-nav-group-panel]");
 
-            if (!toggle || !panel) {
-                return;
+                if (!toggle || !panel) {
+                    return null;
+                }
+
+                return {
+                    group,
+                    toggle,
+                    panel,
+                    groupKey: group.dataset.groupKey ?? "",
+                    defaultOpen: group.dataset.groupDefaultOpen !== "false",
+                    hasActiveLink: !!group.querySelector(".nav-link.is-active, .nav-link[aria-current='page']")
+                };
+            })
+            .filter(Boolean);
+
+        if (!groups.length) {
+            return;
+        }
+
+        const applyGroupState = (targetGroupKey) => {
+            groups.forEach((item) => {
+                const expanded = item.groupKey === targetGroupKey;
+                item.toggle.setAttribute("aria-expanded", expanded.toString());
+                item.panel.hidden = !expanded;
+            });
+        };
+
+        let expandedGroupKey = "";
+
+        const activeGroup = groups.find((item) => item.hasActiveLink);
+        if (activeGroup) {
+            expandedGroupKey = activeGroup.groupKey;
+        } else {
+            try {
+                const storedValue = localStorage.getItem(accordionStorageKey);
+                if (storedValue && groups.some((item) => item.groupKey === storedValue)) {
+                    expandedGroupKey = storedValue;
+                }
+            } catch {
             }
 
-            const groupKey = group.dataset.groupKey;
-            const storageKey = groupKey ? `cdc-portal-nav-group-v2-${groupKey}` : null;
-            const defaultOpen = group.dataset.groupDefaultOpen !== "false";
+            if (!expandedGroupKey) {
+                const defaultGroup = groups.find((item) => item.defaultOpen);
+                if (defaultGroup) {
+                    expandedGroupKey = defaultGroup.groupKey;
+                }
+            }
+        }
 
-            const applyGroupState = (expanded) => {
-                toggle.setAttribute("aria-expanded", expanded.toString());
-                panel.hidden = !expanded;
-            };
+        applyGroupState(expandedGroupKey);
 
-            let expanded = defaultOpen;
+        groups.forEach((item) => {
+            item.toggle.addEventListener("click", () => {
+                const isExpanded = item.toggle.getAttribute("aria-expanded") === "true";
+                const nextExpandedGroupKey = isExpanded ? "" : item.groupKey;
+                applyGroupState(nextExpandedGroupKey);
 
-            if (storageKey) {
                 try {
-                    const storedValue = localStorage.getItem(storageKey);
-                    if (storedValue !== null) {
-                        expanded = storedValue === "true";
+                    if (nextExpandedGroupKey) {
+                        localStorage.setItem(accordionStorageKey, nextExpandedGroupKey);
+                    } else {
+                        localStorage.removeItem(accordionStorageKey);
                     }
-                } catch {
-                }
-            }
-
-            applyGroupState(expanded);
-
-            toggle.addEventListener("click", () => {
-                const nextExpanded = toggle.getAttribute("aria-expanded") !== "true";
-                applyGroupState(nextExpanded);
-
-                if (!storageKey) {
-                    return;
-                }
-
-                try {
-                    localStorage.setItem(storageKey, nextExpanded.toString());
                 } catch {
                 }
             });

@@ -323,7 +323,7 @@
         const mostrarMensaje = (tipo, texto, duracion = 5000) => {
             limpiarTimeoutMensaje();
             const contenedor = document.getElementById("mensajeDinamico");
-            contenedor.textContent = texto;
+            contenedor.textContent = repararTextoMojibake(texto);
             contenedor.className = `page-status-message is-${tipo}`;
 
             if (duracion > 0) {
@@ -337,6 +337,23 @@
 
         const normalizarMonto = (valor) => valor.trim().replace(",", ".");
         const normalizarTicket = (valor) => valor.trim().replace(",", ".");
+        const repararTextoMojibake = (texto) => {
+            if (texto === null || texto === undefined) {
+                return "";
+            }
+
+            const valor = String(texto);
+            if (!/[ÃÂ]/.test(valor)) {
+                return valor;
+            }
+
+            try {
+                const reparado = new TextDecoder("utf-8").decode(Uint8Array.from(valor, caracter => caracter.charCodeAt(0)));
+                return reparado.includes("�") && !valor.includes("�") ? valor : reparado;
+            } catch {
+                return valor;
+            }
+        };
 
         const esValorMontoParcialValido = (valor) => {
             const valorNormalizado = valor.replace(",", ".");
@@ -452,7 +469,7 @@
 
             if (contentType.includes("application/json")) {
                 const errorData = await response.json();
-                return errorData.error || errorData.mensaje || errorData.message || errorMessage;
+                return repararTextoMojibake(errorData.error || errorData.mensaje || errorData.message || errorMessage);
             }
 
             const errorText = await response.text();
@@ -461,7 +478,7 @@
                 .replace(/\s+/g, " ")
                 .trim();
 
-            return errorTextPlano || errorMessage;
+            return repararTextoMojibake(errorTextPlano || errorMessage);
         };
 
         const formatearInputDesdeValorGuardado = (input, valorNormalizado) => {

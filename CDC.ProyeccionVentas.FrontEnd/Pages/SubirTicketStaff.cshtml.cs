@@ -18,25 +18,40 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
             _ticketStaffHttpClient = ticketStaffHttpClient;
         }
 
-        public string CurrentMonthStart { get; private set; } = string.Empty;
-        public string CurrentMonthEnd { get; private set; } = string.Empty;
         public string CurrentMonthLabel { get; private set; } = string.Empty;
+        public List<string> PuestosDisponibles { get; private set; } = new();
+        public string? CatalogoError { get; private set; }
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
             InitializeCurrentMonth();
-        }
-
-        public async Task<IActionResult> OnGetDescargarStaffAsync(string? numeroSupervisor)
-        {
             try
             {
-                var resultado = await _ticketStaffHttpClient.DescargarStaffBaseAsync(numeroSupervisor);
+                PuestosDisponibles = await _ticketStaffHttpClient.ObtenerCatalogoPuestosAsync();
+            }
+            catch (Exception ex)
+            {
+                CatalogoError = $"No se pudo cargar el catálogo de puestos: {ex.Message}";
+                PuestosDisponibles = new List<string>();
+            }
+        }
+
+        public async Task<IActionResult> OnPostDescargarPlantillaAsync([FromBody] List<string>? puestos)
+        {
+            var puestosSeleccionados = (puestos ?? new List<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            try
+            {
+                var resultado = await _ticketStaffHttpClient.DescargarPlantillaAsync(puestosSeleccionados);
                 return new JsonResult(resultado);
             }
             catch (Exception ex)
             {
-                return new JsonResult(new { error = $"Error al descargar el staff base: {ex.Message}" }) { StatusCode = 500 };
+                return new JsonResult(new { error = $"Error al descargar la plantilla: {ex.Message}" }) { StatusCode = 500 };
             }
         }
 
@@ -98,11 +113,8 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
         {
             var today = DateTime.Today;
             var firstDay = new DateTime(today.Year, today.Month, 1);
-            var lastDay = firstDay.AddMonths(1).AddDays(-1);
             var culture = CultureInfo.GetCultureInfo("es-NI");
 
-            CurrentMonthStart = firstDay.ToString("yyyy-MM-dd");
-            CurrentMonthEnd = lastDay.ToString("yyyy-MM-dd");
             CurrentMonthLabel = culture.TextInfo.ToTitleCase(firstDay.ToString("MMMM yyyy", culture));
         }
 

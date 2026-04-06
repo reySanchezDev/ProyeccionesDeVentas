@@ -4,7 +4,9 @@ namespace CDC.ProyeccionVentas.HttpClients.Interfaces
 {
     public interface ITicketStaffHttpClient
     {
-        Task<List<TicketStaffDownloadItem>> DescargarStaffBaseAsync(string? numeroSupervisor);
+        Task<List<string>> ObtenerCatalogoPuestosAsync();
+
+        Task<List<TicketStaffDownloadItem>> DescargarPlantillaAsync(List<string> puestos);
 
         Task<List<TicketStaffExistingItem>> FiltrarExistentesCargaAsync(List<TicketStaffBulkUploadItem> items);
 

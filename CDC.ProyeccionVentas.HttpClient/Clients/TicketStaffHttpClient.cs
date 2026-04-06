@@ -13,14 +13,19 @@ namespace CDC.ProyeccionVentas.HttpClients.Clients
             _httpClient = httpClient;
         }
 
-        public async Task<List<TicketStaffDownloadItem>> DescargarStaffBaseAsync(string? numeroSupervisor)
+        public async Task<List<string>> ObtenerCatalogoPuestosAsync()
         {
-            var query = string.IsNullOrWhiteSpace(numeroSupervisor)
-                ? string.Empty
-                : $"?numeroSupervisor={Uri.EscapeDataString(numeroSupervisor.Trim())}";
+            var response = await _httpClient.GetAsync("/api/ticketstaff/catalogo-puestos");
+            await EnsureSuccessAsync(response, "obtener el catálogo de puestos");
 
-            var response = await _httpClient.GetAsync($"/api/ticketstaff/descargar-staff{query}");
-            await EnsureSuccessAsync(response, "descargar el staff base");
+            var resultado = await response.Content.ReadFromJsonAsync<List<string>>();
+            return resultado ?? new List<string>();
+        }
+
+        public async Task<List<TicketStaffDownloadItem>> DescargarPlantillaAsync(List<string> puestos)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/ticketstaff/descargar-plantilla", puestos ?? new List<string>());
+            await EnsureSuccessAsync(response, "descargar la plantilla de Ticket Staff");
 
             var resultado = await response.Content.ReadFromJsonAsync<List<TicketStaffDownloadItem>>();
             return resultado ?? new List<TicketStaffDownloadItem>();

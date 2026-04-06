@@ -25,10 +25,12 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
         public bool MostrarMensajeSinResultados { get; set; }
         public string? MensajeError { get; set; }
         public int AnioActual => DateTime.Today.Year;
-        public IReadOnlyList<int> AniosEliminar => Enumerable.Range(AnioActual - 2, 5).ToList();
-        public IReadOnlyList<(int Valor, string Nombre)> MesesEliminar => Enumerable.Range(1, 12)
+        public IReadOnlyList<int> AniosDisponibles => Enumerable.Range(AnioActual - 2, 5).ToList();
+        public IReadOnlyList<int> AniosEliminar => AniosDisponibles;
+        public IReadOnlyList<(int Valor, string Nombre)> MesesDisponibles => Enumerable.Range(1, 12)
             .Select(m => (m, CultureInfo.GetCultureInfo("es-NI").DateTimeFormat.GetMonthName(m)))
             .ToList();
+        public IReadOnlyList<(int Valor, string Nombre)> MesesEliminar => MesesDisponibles;
 
         public void OnGet()
         {
@@ -39,15 +41,9 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
         {
             EnsureDefaultFilter();
 
-            if (Filtro.FechaInicio == default || Filtro.FechaFin == default)
+            if (Filtro.Mes < 1 || Filtro.Mes > 12 || Filtro.Ano < 2000)
             {
-                MensajeError = "Debe indicar un rango de fechas válido.";
-                return Page();
-            }
-
-            if (Filtro.FechaInicio.Date > Filtro.FechaFin.Date)
-            {
-                MensajeError = "Fecha Inicio no puede ser mayor que Fecha Fin.";
+                MensajeError = "Debe seleccionar un mes y un año válidos.";
                 return Page();
             }
 
@@ -102,14 +98,9 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
                 return BadRequest("No se recibió información para eliminar.");
             }
 
-            if (request.FechaInicio == default || request.FechaFin == default)
+            if (request.Mes < 1 || request.Mes > 12 || request.Ano < 2000)
             {
                 return BadRequest("Debe seleccionar un mes y un año válidos.");
-            }
-
-            if (request.FechaInicio.Date > request.FechaFin.Date)
-            {
-                return BadRequest("El rango de fechas a eliminar no es válido.");
             }
 
             try
@@ -125,7 +116,7 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
 
         private void EnsureDefaultFilter()
         {
-            if (Filtro.FechaInicio != default && Filtro.FechaFin != default)
+            if (Filtro.Mes >= 1 && Filtro.Mes <= 12 && Filtro.Ano >= 2000)
             {
                 return;
             }
@@ -133,8 +124,8 @@ namespace CDC.ProyeccionVentas.FrontEnd.Pages
             var today = DateTime.Today;
             Filtro = new TicketStaffConsultaFilter
             {
-                FechaInicio = new DateTime(today.Year, today.Month, 1),
-                FechaFin = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month)),
+                Mes = today.Month,
+                Ano = today.Year,
                 NumeroEmpleado = Filtro.NumeroEmpleado
             };
         }

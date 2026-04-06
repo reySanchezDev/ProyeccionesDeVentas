@@ -13,8 +13,7 @@
 
 <div class="screen-shell upload-screen-shell"
      id="ticketStaffUploadApp"
-     data-month-start="@Model.CurrentMonthStart"
-     data-month-end="@Model.CurrentMonthEnd">
+     data-month-label="@Model.CurrentMonthLabel">
     <section class="screen-card screen-card-header screen-card-header-compact">
         <div class="screen-title-row">
             <h2 class="mb-0">@ViewData["Title"]</h2>
@@ -28,46 +27,70 @@
 
     <section class="screen-card screen-card-form">
         <div class="row g-3">
-            <div class="col-lg-6">
+            <div class="col-12">
                 <label for="excelInput" class="form-label">Archivo de carga masiva</label>
                 <input type="file"
                        class="form-control custom-btn-effect"
                        id="excelInput"
                        accept=".xlsx,.xls,.xlsm,.csv" />
             </div>
-            <div class="col-lg-6">
-                <label for="supervisorStaffInput" class="form-label">Supervisor para descarga de staff</label>
-                <input type="text"
-                       class="form-control"
-                       id="supervisorStaffInput"
-                       maxlength="20"
-                       placeholder="Opcional para descargar por supervisor" />
-            </div>
         </div>
     </section>
 
     <section class="screen-card screen-card-actions">
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <button type="button" class="btn btn-outline-success custom-btn-effect" id="btnDescargarPlantilla">
-                <i class="bi bi-file-earmark-excel me-1"></i> Descargar plantilla
-            </button>
-            <button type="button" class="btn btn-outline-secondary custom-btn-effect" id="btnDescargarStaffTodos">
-                <i class="bi bi-download me-1"></i> Descargar staff
-            </button>
-            <button type="button" class="btn btn-outline-secondary custom-btn-effect" id="btnDescargarStaffSupervisor">
-                <i class="bi bi-person-badge me-1"></i> Staff por supervisor
-            </button>
-            <button type="button" class="btn btn-primary custom-btn-effect" id="btnLeerArchivo">
-                <i class="bi bi-file-earmark-arrow-up me-1"></i> Leer archivo
-            </button>
-            <button type="button" class="btn btn-success custom-btn-effect" id="btnGuardar" disabled>
-                <i class="bi bi-database-check me-1"></i> Guardar en BD
-            </button>
-            <button type="button" class="btn btn-outline-danger custom-btn-effect" id="btnLimpiar">
-                <i class="bi bi-x-circle me-1"></i> Limpiar
-            </button>
-            <span class="badge bg-info text-dark ms-auto d-none" id="badgeFilas"></span>
-            <span class="badge bg-secondary d-none" id="badgeEmpleados"></span>
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-5 col-xl-4">
+                <label class="form-label">Puestos</label>
+                <div class="dropdown w-100">
+                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start store-filter-toggle"
+                            type="button"
+                            id="puestosDropdownButton"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-expanded="false"
+                            @(Model.PuestosDisponibles.Count == 0 ? "disabled" : null)>
+                        <span id="puestosFilterSummary">Todos los puestos</span>
+                    </button>
+                    <div class="dropdown-menu w-100 p-2 store-filter-menu" aria-labelledby="puestosDropdownButton">
+                        @foreach (var puesto in Model.PuestosDisponibles)
+                        {
+                            var checkboxId = $"puesto-filter-{puesto.Replace(" ", "-")}";
+                            <div class="form-check">
+                                <input class="form-check-input puesto-filter-check"
+                                       type="checkbox"
+                                       value="@puesto"
+                                       id="@checkboxId" />
+                                <label class="form-check-label" for="@checkboxId">@puesto</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 col-xl-8">
+                <div class="d-flex flex-wrap align-items-center gap-2 h-100">
+                    <button type="button" class="btn btn-outline-success custom-btn-effect" id="btnDescargarPlantilla" @(Model.PuestosDisponibles.Count == 0 ? "disabled" : null)>
+                        <i class="bi bi-file-earmark-excel me-1"></i> Descargar plantilla
+                    </button>
+                    <button type="button" class="btn btn-primary custom-btn-effect" id="btnLeerArchivo">
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i> Leer archivo
+                    </button>
+                    <button type="button" class="btn btn-success custom-btn-effect" id="btnGuardar" disabled>
+                        <i class="bi bi-database-check me-1"></i> Guardar en BD
+                    </button>
+                    <button type="button" class="btn btn-outline-danger custom-btn-effect" id="btnLimpiar">
+                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                    </button>
+                    <span class="badge bg-info text-dark ms-auto d-none" id="badgeFilas"></span>
+                    <span class="badge bg-secondary d-none" id="badgeEmpleados"></span>
+                </div>
+            </div>
+            <div class="col-12 pt-1">
+                <div class="form-text mb-0">Puede seleccionar uno o más puestos para filtrar la plantilla del período @Model.CurrentMonthLabel. Si no selecciona ninguno, se descargarán todos.</div>
+                @if (!string.IsNullOrWhiteSpace(Model.CatalogoError))
+                {
+                    <div class="text-danger small mt-2">@Model.CatalogoError</div>
+                }
+            </div>
         </div>
     </section>
 
@@ -77,10 +100,11 @@
             <table class="table table-bordered table-striped mt-2" id="tablaPreviewTicketStaff">
                 <thead class="table-dark">
                     <tr>
-                        <th>Fecha</th>
                         <th>Número Empleado</th>
                         <th>Nombre Staff</th>
-                        <th>Ticket Promedio</th>
+                        <th>Puesto</th>
+                        <th>Ubicación</th>
+                        <th>Proyección Ticket Promedio</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -97,7 +121,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-3" id="existingRecordsModalMessage">Ya existen registros guardados para una o más combinaciones de Fecha + NumeroEmpleado.</p>
+                <p class="mb-3" id="existingRecordsModalMessage">Ya existen registros guardados para uno o más empleados en el mes actual.</p>
                 <ul class="mb-0" id="existingRecordsList"></ul>
             </div>
             <div class="modal-footer">
@@ -113,15 +137,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         const uploadApp = document.getElementById("ticketStaffUploadApp");
-        const monthStart = uploadApp.dataset.monthStart;
-        const monthEnd = uploadApp.dataset.monthEnd;
+        const monthLabel = uploadApp.dataset.monthLabel;
         const excelInput = document.getElementById("excelInput");
         const previewCard = document.getElementById("preview");
         const previewBody = document.querySelector("#tablaPreviewTicketStaff tbody");
         const btnGuardar = document.getElementById("btnGuardar");
+        const btnDescargarPlantilla = document.getElementById("btnDescargarPlantilla");
         const badgeFilas = document.getElementById("badgeFilas");
         const badgeEmpleados = document.getElementById("badgeEmpleados");
-        const supervisorStaffInput = document.getElementById("supervisorStaffInput");
+        const puestosFilterSummary = document.getElementById("puestosFilterSummary");
+        const puestosFilterChecks = Array.from(document.querySelectorAll(".puesto-filter-check"));
         const existingRecordsModal = new bootstrap.Modal(document.getElementById("existingRecordsModal"));
         const existingRecordsModalLabel = document.getElementById("existingRecordsModalLabel");
         const existingRecordsModalMessage = document.getElementById("existingRecordsModalMessage");
@@ -130,6 +155,23 @@
         let filasCargadas = [];
 
         const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+        const repararTextoMojibake = (texto) => {
+            if (texto === null || texto === undefined) {
+                return "";
+            }
+
+            const valor = String(texto);
+            if (!/[ÃÂ]/.test(valor)) {
+                return valor;
+            }
+
+            try {
+                const reparado = new TextDecoder("utf-8").decode(Uint8Array.from(valor, caracter => caracter.charCodeAt(0)));
+                return reparado.includes("�") && !valor.includes("�") ? valor : reparado;
+            } catch {
+                return valor;
+            }
+        };
 
         const limpiarTimeoutMensaje = () => {
             if (messageTimeoutId) {
@@ -148,7 +190,7 @@
                 return;
             }
 
-            contenedor.textContent = texto;
+            contenedor.textContent = repararTextoMojibake(texto);
             contenedor.className = `page-status-message screen-status upload-screen-status is-${tipo}`;
 
             if (duracion > 0) {
@@ -158,13 +200,6 @@
                     messageTimeoutId = null;
                 }, duracion);
             }
-        };
-
-        const formatearFecha = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            return `${year}-${month}-${day}`;
         };
 
         const limpiarInterfaz = (limpiarMensaje = true) => {
@@ -189,43 +224,6 @@
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/\s+/g, "");
 
-        const parseExcelDate = (value) => {
-            if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-            }
-
-            if (typeof value === "number") {
-                const parsed = XLSX.SSF.parse_date_code(value);
-                if (!parsed) {
-                    return null;
-                }
-
-                return new Date(parsed.y, parsed.m - 1, parsed.d);
-            }
-
-            const text = String(value ?? "").trim();
-            if (!text) {
-                return null;
-            }
-
-            const isoMatch = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-            if (isoMatch) {
-                return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
-            }
-
-            const dmyMatch = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-            if (dmyMatch) {
-                return new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
-            }
-
-            const parsed = new Date(text);
-            if (Number.isNaN(parsed.getTime())) {
-                return null;
-            }
-
-            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-        };
-
         const parseTicketPromedio = (value) => {
             if (value === null || value === undefined || value === "") {
                 return 0;
@@ -247,12 +245,37 @@
             return Number(text);
         };
 
+        const obtenerPuestosSeleccionados = () => puestosFilterChecks
+            .filter(check => check.checked)
+            .map(check => check.value.trim())
+            .filter(Boolean);
+
+        const actualizarResumenPuestos = () => {
+            if (!puestosFilterSummary) {
+                return;
+            }
+
+            const seleccionados = obtenerPuestosSeleccionados();
+            if (seleccionados.length === 0) {
+                puestosFilterSummary.textContent = "Todos los puestos";
+                return;
+            }
+
+            if (seleccionados.length <= 2) {
+                puestosFilterSummary.textContent = seleccionados.join(", ");
+                return;
+            }
+
+            puestosFilterSummary.textContent = `${seleccionados.length} puestos seleccionados`;
+        };
+
         const renderPreview = () => {
             previewBody.innerHTML = filasCargadas.map(item => `
                 <tr>
-                    <td>${item.fecha}</td>
                     <td>${item.numeroEmpleado}</td>
                     <td>${item.nombreStaff || ""}</td>
+                    <td>${item.puesto || ""}</td>
+                    <td>${item.ubicacion || ""}</td>
                     <td>${item.ticketPromedio}</td>
                 </tr>
             `).join("");
@@ -275,11 +298,11 @@
             const contentType = response.headers.get("content-type") || "";
             if (contentType.includes("application/json")) {
                 const data = await response.json();
-                return data.error || data.mensaje || data.message || `HTTP ${response.status}`;
+                return repararTextoMojibake(data.error || data.mensaje || data.message || `HTTP ${response.status}`);
             }
 
             const text = await response.text();
-            return text || `HTTP ${response.status}`;
+            return repararTextoMojibake(text || `HTTP ${response.status}`);
         };
 
         const mostrarModalLista = (titulo, mensaje, items) => {
@@ -297,6 +320,11 @@
             existingRecordsModal.show();
         };
 
+        const construirPayloadPersistencia = () => filasCargadas.map(item => ({
+            numeroEmpleado: item.numeroEmpleado,
+            ticketPromedio: item.ticketPromedio
+        }));
+
         const validarExistentes = async () => {
             const response = await fetch(`${window.location.pathname}?handler=ValidarExistentes`, {
                 method: "POST",
@@ -304,7 +332,7 @@
                     "Content-Type": "application/json",
                     "RequestVerificationToken": tokenAntiforgery()
                 },
-                body: JSON.stringify(filasCargadas)
+                body: JSON.stringify(construirPayloadPersistencia())
             });
 
             if (!response.ok) {
@@ -344,13 +372,14 @@
                 }
 
                 const headers = rows[0].map(normalizarCabecera);
-                const fechaIndex = headers.indexOf("fecha");
                 const numeroEmpleadoIndex = headers.indexOf("numeroempleado");
                 const nombreStaffIndex = headers.indexOf("nombrestaff");
+                const puestoIndex = headers.indexOf("puesto");
+                const ubicacionIndex = headers.indexOf("ubicacion");
                 const ticketPromedioIndex = headers.indexOf("ticketpromedio");
 
-                if (fechaIndex === -1 || numeroEmpleadoIndex === -1 || ticketPromedioIndex === -1) {
-                    throw new Error("La plantilla debe incluir Fecha, NumeroEmpleado y TicketPromedio. NombreStaff es opcional.");
+                if (numeroEmpleadoIndex === -1 || nombreStaffIndex === -1 || puestoIndex === -1 || ubicacionIndex === -1 || ticketPromedioIndex === -1) {
+                    throw new Error("La plantilla debe incluir NumeroEmpleado, NombreStaff, Puesto, Ubicacion y TicketPromedio.");
                 }
 
                 const errores = [];
@@ -364,21 +393,23 @@
                         continue;
                     }
 
-                    const fecha = parseExcelDate(row[fechaIndex]);
-                    if (!fecha) {
-                        errores.push(`Fila ${index + 1}: Fecha inválida.`);
-                        continue;
-                    }
-
-                    const fechaNormalizada = formatearFecha(fecha);
-                    if (fechaNormalizada < monthStart || fechaNormalizada > monthEnd) {
-                        errores.push(`Fila ${index + 1}: la fecha ${fechaNormalizada} no pertenece al mes en curso.`);
-                        continue;
-                    }
-
                     const numeroEmpleado = String(row[numeroEmpleadoIndex] ?? "").trim();
                     if (!numeroEmpleado) {
                         errores.push(`Fila ${index + 1}: NumeroEmpleado es obligatorio.`);
+                        continue;
+                    }
+
+                    const nombreStaff = String(row[nombreStaffIndex] ?? "").trim();
+                    const puesto = String(row[puestoIndex] ?? "").trim();
+                    const ubicacion = String(row[ubicacionIndex] ?? "").trim();
+
+                    if (!puesto) {
+                        errores.push(`Fila ${index + 1}: Puesto es obligatorio.`);
+                        continue;
+                    }
+
+                    if (!ubicacion) {
+                        errores.push(`Fila ${index + 1}: Ubicacion es obligatoria.`);
                         continue;
                     }
 
@@ -388,17 +419,18 @@
                         continue;
                     }
 
-                    const llave = `${fechaNormalizada}|${numeroEmpleado}`;
+                    const llave = numeroEmpleado;
                     if (duplicados.has(llave)) {
-                        errores.push(`Fila ${index + 1}: combinación duplicada para ${fechaNormalizada} + ${numeroEmpleado}.`);
+                        errores.push(`Fila ${index + 1}: NumeroEmpleado duplicado (${numeroEmpleado}).`);
                         continue;
                     }
 
                     duplicados.add(llave);
                     registros.push({
-                        fecha: fechaNormalizada,
                         numeroEmpleado,
-                        nombreStaff: nombreStaffIndex >= 0 ? String(row[nombreStaffIndex] ?? "").trim() : "",
+                        nombreStaff,
+                        puesto,
+                        ubicacion,
                         ticketPromedio
                     });
                 }
@@ -408,12 +440,12 @@
                 }
 
                 if (errores.length) {
-                    const erroresDuplicados = errores.filter(error => error.includes("combinación duplicada"));
+                    const erroresDuplicados = errores.filter(error => error.includes("duplicado"));
                     if (erroresDuplicados.length === errores.length) {
                         mostrarMensaje("", "");
                         mostrarModalLista(
                             "Registros repetidos en el archivo",
-                            "El archivo contiene combinaciones repetidas de Fecha + NumeroEmpleado.",
+                            "El archivo contiene empleados repetidos dentro del mismo mes.",
                             erroresDuplicados
                         );
                         return;
@@ -432,8 +464,8 @@
                     mostrarMensaje("", "");
                     mostrarModalLista(
                         "Registros ya guardados",
-                        "Ya existen registros guardados para una o más combinaciones de Fecha + NumeroEmpleado.",
-                        existentes.map(item => `${item.fecha.substring(0, 10)} - ${item.numeroEmpleado}`)
+                        `Ya existen registros guardados para uno o más empleados en ${monthLabel}.`,
+                        existentes.map(item => `${item.numeroEmpleado} - ${String(item.mes).padStart(2, "0")}/${item.ano}`)
                     );
                     return;
                 }
@@ -463,13 +495,13 @@
                 const response = await fetch(`${window.location.pathname}?handler=Guardar`, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        "RequestVerificationToken": tokenAntiforgery()
-                    },
-                    body: JSON.stringify({
-                        items: filasCargadas
-                    })
-                });
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": tokenAntiforgery()
+                },
+                body: JSON.stringify({
+                    items: construirPayloadPersistencia()
+                })
+            });
 
                 if (!response.ok) {
                     throw new Error(await obtenerMensajeError(response));
@@ -484,18 +516,18 @@
             }
         };
 
-        const descargarPlantilla = () => {
-            const workbook = XLSX.utils.book_new();
-            const worksheet = XLSX.utils.aoa_to_sheet([["Fecha", "NumeroEmpleado", "NombreStaff", "TicketPromedio"]]);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla");
-            XLSX.writeFile(workbook, "Plantilla_TicketStaff.xlsx");
-        };
+        const descargarPlantilla = async () => {
+            const puestos = obtenerPuestosSeleccionados();
+            mostrarMensaje("info", "Descargando plantilla...", 0);
 
-        const descargarStaffBase = async (numeroSupervisor) => {
-            const query = numeroSupervisor
-                ? `?handler=DescargarStaff&numeroSupervisor=${encodeURIComponent(numeroSupervisor)}`
-                : "?handler=DescargarStaff";
-            const response = await fetch(`${window.location.pathname}${query}`);
+            const response = await fetch(`${window.location.pathname}?handler=DescargarPlantilla`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": tokenAntiforgery()
+                },
+                body: JSON.stringify(puestos)
+            });
 
             if (!response.ok) {
                 throw new Error(await obtenerMensajeError(response));
@@ -503,15 +535,24 @@
 
             const data = await response.json();
             if (!Array.isArray(data) || data.length === 0) {
-                throw new Error("No se encontraron empleados para la descarga solicitada.");
+                throw new Error("No se encontraron empleados para los puestos seleccionados.");
             }
 
-            const rows = [["NumeroEmpleado", "NombreStaff"], ...data.map(item => [item.numeroEmpleado, item.nombreStaff || ""])];
+            const rows = [
+                ["NumeroEmpleado", "NombreStaff", "Puesto", "Ubicacion", "TicketPromedio"],
+                ...data.map(item => [
+                    item.numeroEmpleado || "",
+                    item.nombreStaff || "",
+                    item.puesto || "",
+                    item.ubicacion || "",
+                    item.ticketPromedio ?? ""
+                ])
+            ];
+
             const workbook = XLSX.utils.book_new();
             const worksheet = XLSX.utils.aoa_to_sheet(rows);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Staff");
-            const suffix = numeroSupervisor ? `Supervisor_${numeroSupervisor}` : "Todos";
-            XLSX.writeFile(workbook, `StaffBase_${suffix}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla");
+            XLSX.writeFile(workbook, `Plantilla_TicketStaff_${monthLabel.replace(/\s+/g, "_")}.xlsx`);
         };
 
         document.getElementById("btnLeerArchivo")?.addEventListener("click", () => {
@@ -526,34 +567,21 @@
             limpiarInterfaz();
         });
 
-        document.getElementById("btnDescargarPlantilla")?.addEventListener("click", () => {
-            descargarPlantilla();
-        });
-
-        document.getElementById("btnDescargarStaffTodos")?.addEventListener("click", async () => {
-            mostrarMensaje("info", "Descargando staff base...", 0);
+        btnDescargarPlantilla?.addEventListener("click", async () => {
             try {
-                await descargarStaffBase("");
-                mostrarMensaje("success", "Descarga completada.");
+                await descargarPlantilla();
+                mostrarMensaje("success", "Plantilla descargada correctamente.");
             } catch (error) {
-                mostrarMensaje("danger", error.message || "No se pudo descargar el staff base.");
+                mostrarMensaje("danger", error.message || "No se pudo descargar la plantilla.");
             }
         });
 
-        document.getElementById("btnDescargarStaffSupervisor")?.addEventListener("click", async () => {
-            const numeroSupervisor = supervisorStaffInput.value.trim();
-            if (!numeroSupervisor) {
-                mostrarMensaje("warning", "Debe indicar el número de supervisor para esa descarga.");
-                return;
-            }
-
-            mostrarMensaje("info", "Descargando staff por supervisor...", 0);
-            try {
-                await descargarStaffBase(numeroSupervisor);
-                mostrarMensaje("success", "Descarga completada.");
-            } catch (error) {
-                mostrarMensaje("danger", error.message || "No se pudo descargar el staff por supervisor.");
-            }
+        puestosFilterChecks.forEach(check => {
+            check.addEventListener("change", () => {
+                actualizarResumenPuestos();
+            });
         });
+
+        actualizarResumenPuestos();
     </script>
 }

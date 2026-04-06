@@ -1,5 +1,6 @@
 @page
 @model ConsultaTicketStaffModel
+@using System.Globalization
 @{
     ViewData["Title"] = "Consultar Ticket Promedio Staff";
     ViewData["ShowSidebar"] = true;
@@ -10,7 +11,7 @@
     ViewData["MainBodyClass"] = "main-body-programacion";
     ViewData["PageFrameClass"] = "page-frame-programacion";
     var totalResultados = Model.Resultados?.Count ?? 0;
-    var mesActual = DateTime.Today.Month;
+    var cultura = CultureInfo.GetCultureInfo("es-NI");
     var initialMessageClass = string.IsNullOrWhiteSpace(Model.MensajeError)
         ? "page-status-message screen-status upload-screen-status"
         : "page-status-message screen-status upload-screen-status is-danger";
@@ -27,12 +28,22 @@
     <form method="post" class="row g-3 mb-4 screen-card screen-card-form" id="form-filtros">
         @Html.AntiForgeryToken()
         <div class="col-md-4">
-            <label class="form-label">Fecha Inicio</label>
-            <input type="date" class="form-control" asp-for="Filtro.FechaInicio" />
+            <label class="form-label">Mes</label>
+            <select class="form-select" asp-for="Filtro.Mes">
+                @foreach (var mes in Model.MesesDisponibles)
+                {
+                    <option value="@mes.Valor">@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                }
+            </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Fecha Fin</label>
-            <input type="date" class="form-control" asp-for="Filtro.FechaFin" />
+            <label class="form-label">Año</label>
+            <select class="form-select" asp-for="Filtro.Ano">
+                @foreach (var anio in Model.AniosDisponibles)
+                {
+                    <option value="@anio">@anio</option>
+                }
+            </select>
         </div>
         <div class="col-md-4">
             <label class="form-label">Número Empleado (opcional)</label>
@@ -53,9 +64,6 @@
                     <button id="btnRecargar" class="btn btn-outline-primary custom-btn-effect btn-recargar">
                         <i class="bi bi-arrow-clockwise"></i> Recargar
                     </button>
-                    <button id="btnExportarExcel" class="btn btn-outline-success custom-btn-effect btn-exportar" @(totalResultados == 0 ? "disabled" : null)>
-                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
-                    </button>
                     <button id="btnEliminarMes" type="button" class="btn btn-outline-danger custom-btn-effect btn-eliminar-mes">
                         <i class="bi bi-trash me-1"></i> Eliminar Mes
                     </button>
@@ -73,7 +81,7 @@
                             <input id="filtroVistaAvanzado"
                                    type="text"
                                    class="form-control"
-                                   placeholder="Buscar por fecha, empleado, staff o ticket promedio" />
+                                   placeholder="Buscar por período, empleado, staff o ticket promedio" />
                         </div>
                     </div>
                 </div>
@@ -89,8 +97,8 @@
                     <thead class="table-dark">
                         <tr>
                             <th>
-                                <button type="button" class="table-sort-button" data-sort-key="fecha" data-sort-type="date">
-                                    <span>Fecha</span>
+                                <button type="button" class="table-sort-button" data-sort-key="periodo" data-sort-type="monthyear">
+                                    <span>Período</span>
                                     <span class="sort-indicator" aria-hidden="true">↕</span>
                                 </button>
                             </th>
@@ -118,7 +126,7 @@
                         @foreach (var item in Model.Resultados)
                         {
                             <tr data-id="@item.Id">
-                                <td>@item.Fecha.ToString("yyyy-MM-dd")</td>
+                                <td data-sort-value="@($"{item.Ano:D4}-{item.Mes:D2}")">@char.ToUpper(cultura.DateTimeFormat.GetMonthName(item.Mes)[0])@cultura.DateTimeFormat.GetMonthName(item.Mes).Substring(1) @item.Ano</td>
                                 <td>@item.NumeroEmpleado</td>
                                 <td class="@(!item.ExisteEnCDC ? "table-warning" : string.Empty)">
                                     <div>@item.NombreStaff</div>
@@ -167,7 +175,7 @@
                         <option value="">Seleccione un año</option>
                         @foreach (var anio in Model.AniosEliminar)
                         {
-                            if (anio == Model.AnioActual)
+                            if (anio == Model.Filtro.Ano)
                             {
                                 <option value="@anio" selected>@anio</option>
                             }
@@ -184,7 +192,7 @@
                         <option value="">Seleccione un mes</option>
                         @foreach (var mes in Model.MesesEliminar)
                         {
-                            if (mes.Valor == mesActual)
+                            if (mes.Valor == Model.Filtro.Mes)
                             {
                                 <option value="@mes.Valor" selected>@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
                             }
@@ -271,6 +279,23 @@
         ];
 
         const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+        const repararTextoMojibake = (texto) => {
+            if (texto === null || texto === undefined) {
+                return "";
+            }
+
+            const valor = String(texto);
+            if (!/[ÃÂ]/.test(valor)) {
+                return valor;
+            }
+
+            try {
+                const reparado = new TextDecoder("utf-8").decode(Uint8Array.from(valor, caracter => caracter.charCodeAt(0)));
+                return reparado.includes("�") && !valor.includes("�") ? valor : reparado;
+            } catch {
+                return valor;
+            }
+        };
 
         const limpiarTimeoutMensaje = () => {
             if (messageTimeoutId) {
@@ -289,7 +314,7 @@
                 return;
             }
 
-            contenedor.textContent = texto;
+            contenedor.textContent = repararTextoMojibake(texto);
             contenedor.className = `page-status-message screen-status upload-screen-status is-${tipo}`;
 
             if (duracion > 0) {
@@ -354,12 +379,12 @@
 
             if (contentType.includes("application/json")) {
                 const errorData = await response.json();
-                return errorData.error || errorData.mensaje || errorData.message || errorMessage;
+                return repararTextoMojibake(errorData.error || errorData.mensaje || errorData.message || errorMessage);
             }
 
             const errorText = await response.text();
             const errorTextPlano = errorText.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-            return errorTextPlano || errorMessage;
+            return repararTextoMojibake(errorTextPlano || errorMessage);
         };
 
         const normalizarTextoBusqueda = (valor) => (valor || "")
@@ -373,19 +398,19 @@
 
         const obtenerTextoFila = (fila) => {
             const celdas = fila.querySelectorAll("td");
-            const fecha = celdas[0]?.innerText?.trim() ?? "";
+            const periodo = celdas[0]?.innerText?.trim() ?? "";
             const numeroEmpleado = celdas[1]?.innerText?.trim() ?? "";
             const staff = celdas[2]?.querySelector("div")?.innerText?.trim() ?? celdas[2]?.innerText?.trim() ?? "";
             const advertencia = celdas[2]?.querySelector("small")?.innerText?.trim() ?? "";
             const ticketPromedio = celdas[3]?.querySelector("input")?.value?.trim() ?? "";
-            return normalizarTextoBusqueda(`${fecha} ${numeroEmpleado} ${staff} ${advertencia} ${ticketPromedio}`);
+            return normalizarTextoBusqueda(`${periodo} ${numeroEmpleado} ${staff} ${advertencia} ${ticketPromedio}`);
         };
 
         const obtenerValorOrden = (fila, key, type) => {
             const celdas = fila.querySelectorAll("td");
             switch (key) {
-                case "fecha":
-                    return celdas[0]?.innerText?.trim() ?? "";
+                case "periodo":
+                    return celdas[0]?.dataset.sortValue ?? "";
                 case "numeroEmpleado":
                     return celdas[1]?.innerText?.trim() ?? "";
                 case "staff":
@@ -404,6 +429,13 @@
 
             if (type === "date") {
                 return Date.parse(valorA || "") - Date.parse(valorB || "");
+            }
+
+            if (type === "monthyear") {
+                return String(valorA || "").localeCompare(String(valorB || ""), "es", {
+                    sensitivity: "base",
+                    numeric: true
+                });
             }
 
             return String(valorA || "").localeCompare(String(valorB || ""), "es", {
@@ -628,17 +660,19 @@
                 return null;
             }
 
-            const ultimoDia = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
             return {
                 mes,
                 anio,
-                fechaInicio: `${anio}-${String(mes).padStart(2, "0")}-01`,
-                fechaFin: `${anio}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`,
                 etiquetaMes: `${nombresMeses[mes]} ${anio}`
             };
         };
 
         document.addEventListener("DOMContentLoaded", () => {
+            const mensajeInicial = document.getElementById("mensajeDinamico");
+            if (mensajeInicial?.textContent) {
+                mensajeInicial.textContent = repararTextoMojibake(mensajeInicial.textContent);
+            }
+
             tablaResultados?.querySelectorAll('[data-field="ticketPromedio"]').forEach(input => {
                 input.dataset.originalValue = obtenerTicketNormalizado(input, true);
                 input.addEventListener("keydown", (event) => manejarKeydownEditable(event, input));
@@ -687,7 +721,7 @@
                 return;
             }
 
-            const data = [["Fecha", "NumeroEmpleado", "NombreStaff", "TicketPromedio"]];
+            const data = [["Periodo", "NumeroEmpleado", "NombreStaff", "TicketPromedio"]];
             filas.forEach(fila => {
                 const celdas = fila.querySelectorAll("td");
                 data.push([
@@ -743,8 +777,8 @@
                         "RequestVerificationToken": tokenAntiforgery()
                     },
                     body: JSON.stringify({
-                        fechaInicio: seleccion.fechaInicio,
-                        fechaFin: seleccion.fechaFin
+                        mes: seleccion.mes,
+                        ano: seleccion.anio
                     })
                 });
 

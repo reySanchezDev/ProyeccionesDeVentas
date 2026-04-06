@@ -16,10 +16,17 @@ namespace CDC.ProyeccionVentas.API.Controllers
             _ticketStaffService = ticketStaffService;
         }
 
-        [HttpGet("descargar-staff")]
-        public async Task<ActionResult<List<TicketStaffDownloadItem>>> DescargarStaff([FromQuery] string? numeroSupervisor)
+        [HttpGet("catalogo-puestos")]
+        public async Task<ActionResult<List<string>>> ObtenerCatalogoPuestos()
         {
-            var resultado = await _ticketStaffService.DescargarStaffBaseAsync(numeroSupervisor);
+            var resultado = await _ticketStaffService.ObtenerCatalogoPuestosAsync();
+            return Ok(resultado);
+        }
+
+        [HttpPost("descargar-plantilla")]
+        public async Task<ActionResult<List<TicketStaffDownloadItem>>> DescargarPlantilla([FromBody] List<string>? puestos)
+        {
+            var resultado = await _ticketStaffService.DescargarPlantillaAsync(puestos ?? new List<string>());
             return Ok(resultado);
         }
 
@@ -79,14 +86,9 @@ namespace CDC.ProyeccionVentas.API.Controllers
                 return BadRequest("No se recibió información para consultar.");
             }
 
-            if (filter.FechaInicio == default || filter.FechaFin == default)
+            if (filter.Mes < 1 || filter.Mes > 12 || filter.Ano < 2000)
             {
-                return BadRequest("FechaInicio y FechaFin son obligatorias.");
-            }
-
-            if (filter.FechaInicio.Date > filter.FechaFin.Date)
-            {
-                return BadRequest("FechaInicio no puede ser mayor que FechaFin.");
+                return BadRequest("Mes y Año son obligatorios.");
             }
 
             try
@@ -142,14 +144,9 @@ namespace CDC.ProyeccionVentas.API.Controllers
                 return BadRequest("No se recibió información para eliminar.");
             }
 
-            if (request.FechaInicio == default || request.FechaFin == default)
+            if (request.Mes < 1 || request.Mes > 12 || request.Ano < 2000)
             {
-                return BadRequest("FechaInicio y FechaFin son obligatorias.");
-            }
-
-            if (request.FechaInicio.Date > request.FechaFin.Date)
-            {
-                return BadRequest("FechaInicio no puede ser mayor que FechaFin.");
+                return BadRequest("Mes y Año son obligatorios.");
             }
 
             try
