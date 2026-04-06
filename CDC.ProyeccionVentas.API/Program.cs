@@ -60,6 +60,11 @@ builder.Services.AddScoped<ITicketStaffService>(provider =>
     return new TicketStaffService(reportesLsConnectionString);
 });
 
+builder.Services.AddScoped<ITicketSucursalService>(provider =>
+{
+    return new TicketSucursalService(reportesLsConnectionString);
+});
+
 
 // ----------------------------- CORS -------------------------------------
 

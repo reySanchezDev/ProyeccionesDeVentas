@@ -98,10 +98,9 @@
                     <thead class="table-dark">
                         <tr>
                             <th style="width:5%;">ID</th>
-                            <th style="width:20%;">Fecha Proyección</th>
-                            <th style="width:20%;">Sucursal</th>
-                            <th style="width:20%;">Monto (USD)</th>
-                            <th style="width:20%;">Ticket Promedio</th>
+                            <th style="width:25%;">Fecha Proyección</th>
+                            <th style="width:30%;">Sucursal</th>
+                            <th style="width:25%;">Monto (USD)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,14 +118,6 @@
                                            inputmode="decimal"
                                            autocomplete="off"
                                            value="@item.Monto.ToString("F2")" />
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control editable-field input-ticket-promedio"
-                                           data-index="@i"
-                                           data-field="ticketPromedio"
-                                           inputmode="numeric"
-                                           autocomplete="off"
-                                           value="@(item.TicketPromedio?.ToString() ?? string.Empty)" />
                                 </td>
                             </tr>
                         }
@@ -336,7 +327,6 @@
         };
 
         const normalizarMonto = (valor) => valor.trim().replace(",", ".");
-        const normalizarTicket = (valor) => valor.trim().replace(",", ".");
         const repararTextoMojibake = (texto) => {
             if (texto === null || texto === undefined) {
                 return "";
@@ -361,8 +351,6 @@
             return /^\d+([.]\d{0,2})?$/.test(valorNormalizado);
         };
 
-        const esValorTicketParcialValido = (valor) => /^\d*$/.test(valor);
-
         const construirValorEditado = (input, texto) => {
             const inicio = input.selectionStart ?? input.value.length;
             const fin = input.selectionEnd ?? input.value.length;
@@ -375,18 +363,6 @@
 
             const numero = Number(valor);
             return Number.isFinite(numero) ? numero.toFixed(2) : "";
-        };
-
-        const obtenerTicketNormalizado = (input, emptyAsZero = false) => {
-            const valor = normalizarTicket(input.value);
-            if (!valor) return emptyAsZero ? "0" : "";
-
-            const numero = Number(valor);
-            if (!Number.isFinite(numero) || !Number.isInteger(numero) || numero < 0) {
-                return "";
-            }
-
-            return String(numero);
         };
 
         const obtenerSeleccionEliminar = () => {
@@ -414,22 +390,8 @@
             return esValido;
         };
 
-        const validarTicketInput = (input) => {
-            const valor = normalizarTicket(input.value);
-            if (!valor) {
-                input.classList.remove("is-invalid");
-                return true;
-            }
-
-            const numero = Number(valor);
-            const esValido = Number.isFinite(numero) && Number.isInteger(numero) && numero >= 0;
-            input.classList.toggle("is-invalid", !esValido);
-            return esValido;
-        };
-
         const obtenerElementosFila = (fila) => ({
-            montoInput: fila.querySelector('[data-field="monto"]'),
-            ticketInput: fila.querySelector('[data-field="ticketPromedio"]')
+            montoInput: fila.querySelector('[data-field="monto"]')
         });
 
         const obtenerEstadoFila = (rowId) => {
@@ -482,18 +444,12 @@
         };
 
         const formatearInputDesdeValorGuardado = (input, valorNormalizado) => {
-            if (input.dataset.field === "monto") {
-                input.value = Number(valorNormalizado).toFixed(2);
-                input.dataset.originalValue = Number(valorNormalizado).toFixed(2);
-                return;
-            }
-
-            input.value = String(Number(valorNormalizado));
-            input.dataset.originalValue = String(Number(valorNormalizado));
+            input.value = Number(valorNormalizado).toFixed(2);
+            input.dataset.originalValue = Number(valorNormalizado).toFixed(2);
         };
 
         const restaurarValorOriginal = (input) => {
-            const valorOriginal = input.dataset.originalValue || (input.dataset.field === "monto" ? "0.00" : "0");
+            const valorOriginal = input.dataset.originalValue || "0.00";
             formatearInputDesdeValorGuardado(input, valorOriginal);
             input.classList.remove("is-invalid");
         };
@@ -526,9 +482,7 @@
             }
 
             const siguienteValor = construirValorEditado(input, event.key);
-            const esPermitido = input.dataset.field === "monto"
-                ? esValorMontoParcialValido(siguienteValor)
-                : esValorTicketParcialValido(siguienteValor);
+            const esPermitido = esValorMontoParcialValido(siguienteValor);
 
             if (!esPermitido) {
                 event.preventDefault();
@@ -538,9 +492,7 @@
         const manejarPasteEditable = (event, input) => {
             const textoPegado = event.clipboardData?.getData("text") ?? "";
             const siguienteValor = construirValorEditado(input, textoPegado);
-            const esPermitido = input.dataset.field === "monto"
-                ? esValorMontoParcialValido(siguienteValor)
-                : esValorTicketParcialValido(siguienteValor);
+            const esPermitido = esValorMontoParcialValido(siguienteValor);
 
             if (!esPermitido) {
                 event.preventDefault();
@@ -548,40 +500,28 @@
         };
 
         const manejarInputEditable = (input) => {
-            if (input.dataset.field === "monto") {
-                input.classList.toggle("is-invalid", !esValorMontoParcialValido(input.value));
-                return;
-            }
-
-            input.classList.toggle("is-invalid", !esValorTicketParcialValido(input.value));
+            input.classList.toggle("is-invalid", !esValorMontoParcialValido(input.value));
         };
 
         const construirPayloadRegistro = (fila, campoCambiado) => {
             const rowId = Number(fila.dataset.id);
-            const { montoInput, ticketInput } = obtenerElementosFila(fila);
+            const { montoInput } = obtenerElementosFila(fila);
 
             if (!Number.isInteger(rowId)) {
                 throw new Error("No se encontró el Id del registro a actualizar.");
             }
 
             const montoValido = validarMontoInput(montoInput);
-            const ticketValido = validarTicketInput(ticketInput);
 
             if (campoCambiado === "monto" && !montoValido) {
                 return null;
             }
 
-            if (campoCambiado === "ticketPromedio" && !ticketValido) {
-                return null;
-            }
-
             const montoActual = montoValido ? obtenerMontoNormalizado(montoInput) : (montoInput.dataset.originalValue || "0.00");
-            const ticketActual = ticketValido ? obtenerTicketNormalizado(ticketInput, true) : (ticketInput.dataset.originalValue || "0");
 
             return {
                 id: rowId,
-                monto: Number(montoActual),
-                ticketPromedio: Number(ticketActual)
+                monto: Number(montoActual)
             };
         };
 
@@ -607,11 +547,9 @@
                     throw new Error(await obtenerMensajeErrorDesdeResponse(response));
                 }
 
-                const { montoInput, ticketInput } = obtenerElementosFila(fila);
-                const inputActualizado = campoCambiado === "monto" ? montoInput : ticketInput;
-                const valorGuardado = campoCambiado === "monto"
-                    ? payload.monto.toFixed(2)
-                    : String(payload.ticketPromedio);
+                const { montoInput } = obtenerElementosFila(fila);
+                const inputActualizado = montoInput;
+                const valorGuardado = payload.monto.toFixed(2);
 
                 formatearInputDesdeValorGuardado(inputActualizado, valorGuardado);
                 inputActualizado.classList.remove("is-invalid");
@@ -650,38 +588,22 @@
             const fila = input.closest("tr");
             if (!fila) return;
 
-            const campoCambiado = input.dataset.field;
-
-            if (campoCambiado === "monto" && normalizarMonto(input.value) === "") {
+            if (normalizarMonto(input.value) === "") {
                 restaurarValorOriginal(input);
                 mostrarMensaje("danger", "Monto (USD) es obligatorio y se restauró el valor anterior.");
                 return;
             }
 
-            if (campoCambiado === "ticketPromedio" && normalizarTicket(input.value) === "") {
-                input.value = "0";
-            }
-
-            const esValido = campoCambiado === "monto"
-                ? validarMontoInput(input)
-                : validarTicketInput(input);
+            const campoCambiado = input.dataset.field;
+            const esValido = validarMontoInput(input);
 
             if (!esValido) {
-                if (campoCambiado === "monto") {
-                    restaurarValorOriginal(input);
-                }
-                mostrarMensaje(
-                    "danger",
-                    campoCambiado === "monto"
-                        ? "Monto (USD) debe ser numérico, mayor o igual a cero y con máximo 2 decimales."
-                        : "Ticket Promedio debe ser un número entero mayor o igual a cero."
-                );
+                restaurarValorOriginal(input);
+                mostrarMensaje("danger", "Monto (USD) debe ser numérico, mayor o igual a cero y con máximo 2 decimales.");
                 return;
             }
 
-            const valorActual = campoCambiado === "monto"
-                ? obtenerMontoNormalizado(input)
-                : obtenerTicketNormalizado(input, true);
+            const valorActual = obtenerMontoNormalizado(input);
 
             if (valorActual === input.dataset.originalValue) {
                 formatearInputDesdeValorGuardado(input, valorActual);
@@ -691,12 +613,7 @@
 
             const payload = construirPayloadRegistro(fila, campoCambiado);
             if (!payload) {
-                mostrarMensaje(
-                    "danger",
-                    campoCambiado === "monto"
-                        ? "Monto (USD) debe ser numérico, mayor o igual a cero y con máximo 2 decimales."
-                        : "Ticket Promedio debe ser un número entero mayor o igual a cero."
-                );
+                mostrarMensaje("danger", "Monto (USD) debe ser numérico, mayor o igual a cero y con máximo 2 decimales.");
                 return;
             }
 
@@ -739,15 +656,6 @@
 
                 tablaResultados.querySelectorAll('[data-field="monto"]').forEach(input => {
                     input.dataset.originalValue = obtenerMontoNormalizado(input);
-                    input.addEventListener("keydown", (event) => manejarKeydownEditable(event, input));
-                    input.addEventListener("paste", (event) => manejarPasteEditable(event, input));
-                    input.addEventListener("drop", (event) => event.preventDefault());
-                    input.addEventListener("input", () => manejarInputEditable(input));
-                    input.addEventListener("blur", () => manejarBlurEditable(input));
-                });
-
-                tablaResultados.querySelectorAll('[data-field="ticketPromedio"]').forEach(input => {
-                    input.dataset.originalValue = obtenerTicketNormalizado(input, true);
                     input.addEventListener("keydown", (event) => manejarKeydownEditable(event, input));
                     input.addEventListener("paste", (event) => manejarPasteEditable(event, input));
                     input.addEventListener("drop", (event) => event.preventDefault());
@@ -885,7 +793,7 @@
 
         btnConfirmExportExcel?.addEventListener("click", function () {
             const filas = document.querySelectorAll("#tablaResultados tbody tr");
-            const encabezados = ["Fecha", "Sucursal", "Monto", "Ticket Promedio"];
+            const encabezados = ["Fecha", "Sucursal", "Monto"];
             const data = [encabezados];
 
             filas.forEach(fila => {
@@ -893,8 +801,7 @@
                 const filaData = [
                     celdas[1].innerText,
                     celdas[2].innerText,
-                    celdas[3].querySelector("input")?.value || "",
-                    celdas[4].querySelector("input")?.value || ""
+                    celdas[3].querySelector("input")?.value || ""
                 ];
                 data.push(filaData);
             });

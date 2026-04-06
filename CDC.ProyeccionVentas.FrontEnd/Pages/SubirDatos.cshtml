@@ -66,7 +66,6 @@
                         <th>Fecha</th>
                         <th>Sucursal</th>
                         <th>Monto</th>
-                        <th>Ticket Promedio</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -150,8 +149,7 @@
                     <hr>
                     <b>Formato correcto:</b><br>
                     - Hoja llamada 'subir'<br>
-                    - 4 columnas obligatorias: Fecha, Sucursal, Monto, TicketPromedio<br>
-                    - TicketPromedio puede venir vacío o con un entero mayor o igual a cero
+                    - 3 columnas obligatorias: Fecha, Sucursal, Monto
                 </div>`);
         }
 
@@ -342,10 +340,6 @@
                     rowData.Monto != null
                         ? rowData.Monto.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : '';
-                row.insertCell().textContent =
-                    rowData.TicketPromedio != null
-                        ? rowData.TicketPromedio
-                        : '';
             });
         }
 
@@ -431,14 +425,10 @@
 
                     // Asume que la primera fila de jsonData es el encabezado
                     const headers = jsonData[0].map(h => String(h).trim()); // Normaliza los encabezados
-                    const headerAliasMap = {
-                        "Ticket Promedio": "TicketPromedio"
-                    };
-                    const normalizedHeaders = headers.map(h => headerAliasMap[h] || h);
 
                     // Validar que los encabezados esperados estén presentes
-                    const requiredHeaders = ["Fecha", "Sucursal", "Monto", "TicketPromedio"];
-                    const missingHeaders = requiredHeaders.filter(h => !normalizedHeaders.includes(h));
+                    const requiredHeaders = ["Fecha", "Sucursal", "Monto"];
+                    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
 
                     if (missingHeaders.length > 0) {
                         limpiarTodo(); // Limpia la interfaz
@@ -458,7 +448,7 @@
                         let currentRowErrors = []; // Almacenará los detalles del error para esta fila
 
                         headers.forEach((rawHeader, index) => {
-                            const header = headerAliasMap[String(rawHeader).trim()] || String(rawHeader).trim();
+                            const header = String(rawHeader).trim();
                             let value = row[index]; // Valor de la celda
                             switch (header) {
                                     case "Fecha":
@@ -539,33 +529,6 @@
         }
         break;
 
-                                case "TicketPromedio":
-                                    {
-                                        const valorTexto = value == null ? '' : String(value).trim();
-                                        if (!valorTexto) {
-                                            obj[header] = null;
-                                            break;
-                                        }
-
-                                        const valorNormalizado = Number(valorTexto.replace(",", "."));
-                                        if (!Number.isFinite(valorNormalizado)) {
-                                            obj[header] = null;
-                                            rowIsValid = false;
-                                            currentRowErrors.push('TicketPromedio inválido');
-                                        } else if (!Number.isInteger(valorNormalizado)) {
-                                            obj[header] = null;
-                                            rowIsValid = false;
-                                            currentRowErrors.push('TicketPromedio debe ser entero');
-                                        } else if (valorNormalizado < 0) {
-                                            obj[header] = null;
-                                            rowIsValid = false;
-                                            currentRowErrors.push('TicketPromedio debe ser mayor o igual que cero');
-                                        } else {
-                                            obj[header] = valorNormalizado;
-                                        }
-                                    }
-                                    break;
-
                                 case "Sucursal":
                                     obj["CodSucursal"] = String(value).trim();
                                     if (!obj["CodSucursal"]) {
@@ -609,7 +572,7 @@
 
                     if (datosExcel.length === 0) {
                         limpiarTodo(); // Limpia la interfaz
-                        mostrarMensaje('<div class="alert alert-warning">No se encontraron datos válidos en el archivo después del procesamiento. Verifique los encabezados (Fecha, Sucursal, Monto y TicketPromedio) y el formato de los datos.</div>');
+                        mostrarMensaje('<div class="alert alert-warning">No se encontraron datos válidos en el archivo después del procesamiento. Verifique los encabezados (Fecha, Sucursal y Monto) y el formato de los datos.</div>');
                         document.getElementById('progressContainer').classList.add('d-none');
                         return;
                     }
@@ -712,8 +675,7 @@
                         body: JSON.stringify(datosExcel.map(d => ({
                             fecha: d.Fecha,
                             codSucursal: d.CodSucursal,
-                            monto: d.Monto,
-                            ticketPromedio: d.TicketPromedio ?? null
+                            monto: d.Monto
                         })))
                     });
 

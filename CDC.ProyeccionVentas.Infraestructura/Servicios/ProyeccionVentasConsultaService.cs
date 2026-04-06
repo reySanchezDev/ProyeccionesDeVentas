@@ -36,7 +36,7 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                 await connection.OpenAsync();
 
                 var query = @"
-                    SELECT Id, Fecha, CodSucursal, Monto, TicketPromedio
+                    SELECT Id, Fecha, CodSucursal, Monto
                     FROM dbo.ProyeccionVentas 
                     WHERE Fecha >= @FechaInicio AND Fecha <= @FechaFin
                 ";
@@ -69,8 +69,7 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
                                 Id = reader.GetInt32(0),
                                 Fecha = reader.GetDateTime(1),
                                 CodSucursal = reader.GetString(2),
-                                Monto = reader.GetDecimal(3),
-                                TicketPromedio = reader.IsDBNull(4) ? null : reader.GetInt32(4)
+                                Monto = reader.GetDecimal(3)
                             });
                         }
                     }
@@ -91,12 +90,11 @@ namespace CDC.ProyeccionVentas.Infraestructura.Servicios
 
                 foreach (var item in cambios)
                 {
-                    var query = "UPDATE dbo.ProyeccionVentas SET Monto = @Monto, TicketPromedio = @TicketPromedio, FechaAudit = GETDATE() WHERE Id = @Id";
+                    var query = "UPDATE dbo.ProyeccionVentas SET Monto = @Monto, FechaAudit = GETDATE() WHERE Id = @Id";
 
                     using (var command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@Monto", item.Monto);
-                        command.Parameters.Add("@TicketPromedio", SqlDbType.Int).Value = (object?)item.TicketPromedio ?? DBNull.Value;
                         command.Parameters.AddWithValue("@Id", item.Id);
 
                         await command.ExecuteNonQueryAsync();

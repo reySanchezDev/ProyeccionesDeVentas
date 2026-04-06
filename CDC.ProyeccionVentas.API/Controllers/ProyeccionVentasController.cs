@@ -23,15 +23,6 @@ namespace CDC.ProyeccionVentas.API.Controllers
                 return BadRequest(new { success = false, message = "No se recibieron datos para insertar." });
             }
 
-            if (proyecciones.Any(p => p.TicketPromedio.HasValue && p.TicketPromedio.Value < 0))
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "TicketPromedio debe ser un entero mayor o igual a cero cuando se informa."
-                });
-            }
-
             try
             {
                 await _repository.InsertarProyeccionesAsync(proyecciones);

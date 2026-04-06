@@ -35,9 +35,6 @@ namespace CDC.ProyeccionVentas.API.Controllers
             if (cambios.Any(c => c.Monto < 0))
                 return BadRequest("Monto debe ser un decimal mayor o igual a cero.");
 
-            if (cambios.Any(c => c.TicketPromedio.HasValue && c.TicketPromedio.Value < 0))
-                return BadRequest("TicketPromedio debe ser un entero mayor o igual a cero cuando se informa.");
-
             try
             {
                 await _consultaService.GuardarCambiosAsync(cambios);

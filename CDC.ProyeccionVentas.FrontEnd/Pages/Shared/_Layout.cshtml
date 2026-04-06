@@ -25,6 +25,8 @@
         var isSubirTicketStaff = currentPath.EndsWith("/SubirTicketStaff", StringComparison.OrdinalIgnoreCase)
             || currentPath.EndsWith("/TicketStaff", StringComparison.OrdinalIgnoreCase);
         var isConsultaTicketStaff = currentPath.EndsWith("/ConsultaTicketStaff", StringComparison.OrdinalIgnoreCase);
+        var isSubirTicketSucursal = currentPath.EndsWith("/SubirTicketSucursal", StringComparison.OrdinalIgnoreCase);
+        var isConsultaTicketSucursal = currentPath.EndsWith("/ConsultaTicketSucursal", StringComparison.OrdinalIgnoreCase);
     }
 
     <div id="appContainer"
@@ -82,33 +84,51 @@
                                 </ul>
                             </section>
 
-                            <section class="sidebar-nav-group" data-nav-group data-group-key="ticket-promedio-staff" data-group-default-open="false">
+                            <section class="sidebar-nav-group" data-nav-group data-group-key="ticket-promedio" data-group-default-open="false">
                                 <button type="button"
                                         class="sidebar-group-toggle"
-                                        id="grupo-ticket-staff"
+                                        id="grupo-ticket-promedio"
                                         data-nav-group-toggle
                                         aria-expanded="true"
-                                        aria-controls="grupo-ticket-staff-opciones">
-                                    <span class="sidebar-group-title">Ticket Promedio Por Staff</span>
+                                        aria-controls="grupo-ticket-promedio-opciones">
+                                    <span class="sidebar-group-title">Ticket Promedio</span>
                                     <i class="bi bi-chevron-down"></i>
                                 </button>
-                                <ul class="nav flex-column" id="grupo-ticket-staff-opciones" data-nav-group-panel>
+                                <ul class="nav flex-column" id="grupo-ticket-promedio-opciones" data-nav-group-panel>
                                     <li class="nav-item">
                                         <a class="nav-link@(isSubirTicketStaff ? " is-active" : string.Empty)"
                                            asp-page="/SubirTicketStaff"
-                                           title="Subir Tickets"
+                                           title="Subir Tickets por staff"
                                            aria-current="@(isSubirTicketStaff ? "page" : null)">
                                             <i class="bi bi-receipt-cutoff"></i>
-                                            <span>Subir Tickets</span>
+                                            <span>Subir Tickets por Staff</span>
                                         </a>
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link@(isConsultaTicketStaff ? " is-active" : string.Empty)"
                                            asp-page="/ConsultaTicketStaff"
-                                           title="Consultar Tickets"
+                                           title="Consultar Tickets por staff"
                                            aria-current="@(isConsultaTicketStaff ? "page" : null)">
                                             <i class="bi bi-search-heart"></i>
-                                            <span>Consultar Tickets</span>
+                                            <span>Consultar Tickets por Staff</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isSubirTicketSucursal ? " is-active" : string.Empty)"
+                                           asp-page="/SubirTicketSucursal"
+                                           title="Subir Tickets por sucursal"
+                                           aria-current="@(isSubirTicketSucursal ? "page" : null)">
+                                            <i class="bi bi-shop"></i>
+                                            <span>Subir Tickets por Sucursal</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isConsultaTicketSucursal ? " is-active" : string.Empty)"
+                                           asp-page="/ConsultaTicketSucursal"
+                                           title="Consultar Tickets por sucursal"
+                                           aria-current="@(isConsultaTicketSucursal ? "page" : null)">
+                                            <i class="bi bi-search"></i>
+                                            <span>Consultar Tickets por Sucursal</span>
                                         </a>
                                     </li>
                                 </ul>

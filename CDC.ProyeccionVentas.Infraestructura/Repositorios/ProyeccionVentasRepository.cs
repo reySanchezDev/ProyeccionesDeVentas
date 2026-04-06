@@ -27,14 +27,13 @@ namespace CDC.ProyeccionVentas.Infraestructura.Repositorios
             foreach (var item in proyecciones)
             {
                 var command = new SqlCommand(@"
-                    INSERT INTO dbo.ProyeccionVentas (Fecha, CodSucursal, Monto, TicketPromedio, FechaAudit)
-                    VALUES (@Fecha, @CodSucursal, @Monto, @TicketPromedio, GETDATE())
+                    INSERT INTO dbo.ProyeccionVentas (Fecha, CodSucursal, Monto, FechaAudit)
+                    VALUES (@Fecha, @CodSucursal, @Monto, GETDATE())
                 ", connection);
 
                 command.Parameters.AddWithValue("@Fecha", item.Fecha);
                 command.Parameters.AddWithValue("@CodSucursal", item.CodSucursal);
                 command.Parameters.AddWithValue("@Monto", item.Monto);
-                command.Parameters.Add("@TicketPromedio", SqlDbType.Int).Value = (object?)item.TicketPromedio ?? DBNull.Value;
 
                 await command.ExecuteNonQueryAsync();
             }
