@@ -65,6 +65,11 @@ builder.Services.AddScoped<ITicketSucursalService>(provider =>
     return new TicketSucursalService(reportesLsConnectionString);
 });
 
+builder.Services.AddScoped<ITransaccionSucursalService>(provider =>
+{
+    return new TransaccionSucursalService(reportesLsConnectionString);
+});
+
 
 // ----------------------------- CORS -------------------------------------
 

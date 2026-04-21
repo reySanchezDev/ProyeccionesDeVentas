@@ -1,0 +1,599 @@
+@page
+@model SubirTransaccionesModel
+@{
+    ViewData["Title"] = "Subir Transacciones";
+    ViewData["ShowSidebar"] = true;
+    ViewData["HtmlClass"] = "upload-screen-page";
+    ViewData["BodyClass"] = "upload-screen-page";
+    ViewData["AppContainerClass"] = "app-container-upload-screen";
+    ViewData["MainContentClass"] = "main-content-area-upload-screen";
+    ViewData["MainBodyClass"] = "main-body-upload-screen";
+    ViewData["PageFrameClass"] = "page-frame-upload-screen";
+}
+
+<div class="screen-shell upload-screen-shell"
+     id="transaccionesUploadApp"
+     data-month-label="@Model.CurrentMonthLabel">
+    <section class="screen-card screen-card-header screen-card-header-compact">
+        <div class="screen-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+            <span id="mensajeDinamico" class="page-status-message screen-status upload-screen-status" aria-live="polite"></span>
+        </div>
+    </section>
+
+    <form method="post" id="transaccionesUploadAntiForgeryForm" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <section class="screen-card screen-card-form">
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="excelInput" class="form-label">Archivo de carga masiva</label>
+                <input type="file"
+                       class="form-control custom-btn-effect"
+                       id="excelInput"
+                       accept=".xlsx,.xls,.xlsm,.csv" />
+            </div>
+        </div>
+    </section>
+
+    <section class="screen-card screen-card-actions">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-5 col-xl-4">
+                <label class="form-label">Sucursal (opcional)</label>
+                <div class="dropdown w-100">
+                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start store-filter-toggle"
+                            type="button"
+                            id="storeFilterDropdownButton"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-expanded="false"
+                            @(Model.StoresDisponibles.Count == 0 ? "disabled" : null)>
+                        <span id="storeFilterSummary">Todas las sucursales</span>
+                    </button>
+                    <div class="dropdown-menu w-100 p-2 store-filter-menu" aria-labelledby="storeFilterDropdownButton">
+                        @foreach (var store in Model.StoresDisponibles)
+                        {
+                            var checkboxId = $"transaccion-sucursal-filter-{store.No}";
+                            <div class="form-check">
+                                <input class="form-check-input store-filter-check"
+                                       type="checkbox"
+                                       value="@store.No"
+                                       id="@checkboxId" />
+                                <label class="form-check-label" for="@checkboxId">@store.No - @store.StoreNo</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 col-xl-8">
+                <div class="d-flex flex-wrap align-items-center gap-2 h-100">
+                    <button type="button" class="btn btn-outline-success custom-btn-effect" id="btnDescargarPlantilla" @(Model.StoresDisponibles.Count == 0 ? "disabled" : null)>
+                        <i class="bi bi-file-earmark-excel me-1"></i> Descargar plantilla
+                    </button>
+                    <button type="button" class="btn btn-primary custom-btn-effect" id="btnLeerArchivo">
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i> Leer archivo
+                    </button>
+                    <button type="button" class="btn btn-success custom-btn-effect" id="btnGuardar" disabled>
+                        <i class="bi bi-database-check me-1"></i> Guardar en BD
+                    </button>
+                    <button type="button" class="btn btn-outline-danger custom-btn-effect" id="btnLimpiar">
+                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                    </button>
+                    <span class="badge bg-info text-dark ms-auto d-none" id="badgeFilas"></span>
+                    <span class="badge bg-secondary d-none" id="badgeSucursales"></span>
+                </div>
+            </div>
+            <div class="col-12 pt-1">
+                <div class="form-text mb-0">Puede seleccionar una o más sucursales para filtrar la plantilla del período @Model.CurrentMonthLabel. Si no selecciona ninguna, se descargarán todas.</div>
+                @if (!string.IsNullOrWhiteSpace(Model.CatalogoError))
+                {
+                    <div class="text-danger small mt-2">@Model.CatalogoError</div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="screen-card screen-card-table d-none" id="preview">
+        <h4 class="upload-preview-title">Vista previa de la carga</h4>
+        <div class="scroll-tabla-preview">
+            <table class="table table-bordered table-striped mt-2" id="tablaPreviewTransacciones">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código Sucursal</th>
+                        <th>Nombre Sucursal</th>
+                        <th>Transacción Proyectada</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="transaccionesMessageModal" tabindex="-1" aria-labelledby="transaccionesMessageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transaccionesMessageModalLabel">Validación de carga</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3" id="transaccionesMessageModalText"></p>
+                <ul class="mb-0" id="transaccionesMessageModalList"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary custom-btn-effect" data-bs-dismiss="modal">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const uploadApp = document.getElementById("transaccionesUploadApp");
+        const monthLabel = uploadApp.dataset.monthLabel;
+        const excelInput = document.getElementById("excelInput");
+        const previewCard = document.getElementById("preview");
+        const previewBody = document.querySelector("#tablaPreviewTransacciones tbody");
+        const btnGuardar = document.getElementById("btnGuardar");
+        const btnDescargarPlantilla = document.getElementById("btnDescargarPlantilla");
+        const badgeFilas = document.getElementById("badgeFilas");
+        const badgeSucursales = document.getElementById("badgeSucursales");
+        const storeFilterSummary = document.getElementById("storeFilterSummary");
+        const storeFilterChecks = Array.from(document.querySelectorAll(".store-filter-check"));
+        const validStoreCodes = @Html.Raw(Model.StoreCodesDisponiblesJson);
+        const storeNameMap = @Html.Raw(Model.StoreNameMapJson);
+        const messageModal = new bootstrap.Modal(document.getElementById("transaccionesMessageModal"));
+        const messageModalLabel = document.getElementById("transaccionesMessageModalLabel");
+        const messageModalText = document.getElementById("transaccionesMessageModalText");
+        const messageModalList = document.getElementById("transaccionesMessageModalList");
+        let messageTimeoutId = null;
+        let filasCargadas = [];
+
+        const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+        const repararTextoMojibake = (texto) => {
+            if (texto === null || texto === undefined) {
+                return "";
+            }
+
+            const valor = String(texto);
+            if (!/[ÃÂ]/.test(valor)) {
+                return valor;
+            }
+
+            try {
+                const reparado = new TextDecoder("utf-8").decode(Uint8Array.from(valor, caracter => caracter.charCodeAt(0)));
+                return reparado.includes("�") && !valor.includes("�") ? valor : reparado;
+            } catch {
+                return valor;
+            }
+        };
+
+        const limpiarTimeoutMensaje = () => {
+            if (messageTimeoutId) {
+                clearTimeout(messageTimeoutId);
+                messageTimeoutId = null;
+            }
+        };
+
+        const mostrarMensaje = (tipo, texto, duracion = 4000) => {
+            const contenedor = document.getElementById("mensajeDinamico");
+            limpiarTimeoutMensaje();
+
+            if (!texto) {
+                contenedor.textContent = "";
+                contenedor.className = "page-status-message screen-status upload-screen-status";
+                return;
+            }
+
+            contenedor.textContent = repararTextoMojibake(texto);
+            contenedor.className = `page-status-message screen-status upload-screen-status is-${tipo}`;
+
+            if (duracion > 0) {
+                messageTimeoutId = window.setTimeout(() => {
+                    contenedor.textContent = "";
+                    contenedor.className = "page-status-message screen-status upload-screen-status";
+                    messageTimeoutId = null;
+                }, duracion);
+            }
+        };
+
+        const limpiarInterfaz = (limpiarMensaje = true) => {
+            filasCargadas = [];
+            excelInput.value = "";
+            previewBody.innerHTML = "";
+            previewCard.classList.add("d-none");
+            previewCard.style.display = "none";
+            btnGuardar.disabled = true;
+            badgeFilas.classList.add("d-none");
+            badgeSucursales.classList.add("d-none");
+
+            if (limpiarMensaje) {
+                mostrarMensaje("", "");
+            }
+        };
+
+        const normalizarCabecera = (valor) => String(valor ?? "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, "");
+
+        const parseTransaccionProyectada = (value) => {
+            if (value === null || value === undefined || value === "") {
+                return { value: 0 };
+            }
+
+            if (typeof value === "number") {
+                if (!Number.isFinite(value) || value < 0) {
+                    return { error: "no es un número válido mayor o igual a cero." };
+                }
+
+                return { value: Number(value.toFixed(2)) };
+            }
+
+            let text = String(value).trim();
+            if (!text) {
+                return { value: 0 };
+            }
+
+            text = text
+                .replace(/^'+/, "")
+                .replace(/\s+/g, "");
+
+            if (!text) {
+                return { value: 0 };
+            }
+
+            if (/[^0-9.,]/.test(text)) {
+                return {
+                    error: `el valor "${value}" contiene caracteres no numéricos.`
+                };
+            }
+
+            let normalized = text;
+            const hasDot = text.includes(".");
+            const hasComma = text.includes(",");
+
+            if (hasDot && hasComma) {
+                const decimalSeparator = text.lastIndexOf(".") > text.lastIndexOf(",") ? "." : ",";
+                normalized = decimalSeparator === "."
+                    ? text.replace(/,/g, "")
+                    : text.replace(/\./g, "").replace(/,/g, ".");
+            } else if (hasComma) {
+                normalized = /^\d{1,3}(,\d{3})+$/.test(text)
+                    ? text.replace(/,/g, "")
+                    : text.replace(/,/g, ".");
+            } else if (hasDot) {
+                normalized = /^\d{1,3}(\.\d{3})+$/.test(text)
+                    ? text.replace(/\./g, "")
+                    : text;
+            }
+
+            if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+                return {
+                    error: `el valor "${value}" no tiene un formato válido. Use ejemplos como 8, 8.5, 8,50, 1250.00 o 1,250.00.`
+                };
+            }
+
+            const parsed = Number(normalized);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+                return {
+                    error: `el valor "${value}" no es un número válido mayor o igual a cero.`
+                };
+            }
+
+            return { value: Number(parsed.toFixed(2)) };
+        };
+
+        const obtenerSucursalesSeleccionadas = () => storeFilterChecks
+            .filter(check => check.checked)
+            .map(check => check.value.trim())
+            .filter(Boolean);
+
+        const actualizarResumenSucursales = () => {
+            const seleccionadas = obtenerSucursalesSeleccionadas();
+            if (seleccionadas.length === 0) {
+                storeFilterSummary.textContent = "Todas las sucursales";
+                return;
+            }
+
+            if (seleccionadas.length <= 2) {
+                storeFilterSummary.textContent = seleccionadas.join(", ");
+                return;
+            }
+
+            storeFilterSummary.textContent = `${seleccionadas.length} sucursales seleccionadas`;
+        };
+
+        const renderPreview = () => {
+            previewBody.innerHTML = filasCargadas.map(item => `
+                <tr>
+                    <td>${item.codSucursal}</td>
+                    <td>${item.nombreSucursal || ""}</td>
+                    <td>${item.transaccionProyectada}</td>
+                </tr>
+            `).join("");
+
+            previewCard.classList.remove("d-none");
+            previewCard.style.display = "flex";
+            badgeFilas.textContent = `Filas: ${filasCargadas.length}`;
+            badgeFilas.classList.remove("d-none");
+            badgeSucursales.textContent = `Sucursales: ${new Set(filasCargadas.map(item => item.codSucursal)).size}`;
+            badgeSucursales.classList.remove("d-none");
+        };
+
+        const mostrarModalLista = (titulo, mensaje, items) => {
+            messageModalLabel.textContent = titulo;
+            messageModalText.textContent = mensaje;
+            const detalle = items
+                .slice(0, 25)
+                .map(item => `<li>${item}</li>`)
+                .join("");
+            const extra = items.length > 25 ? `<li>Y ${items.length - 25} coincidencia(s) más...</li>` : "";
+            messageModalList.innerHTML = `${detalle}${extra}`;
+            messageModal.show();
+        };
+
+        const obtenerMensajeError = async (response) => {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+                const data = await response.json();
+                return repararTextoMojibake(data.error || data.mensaje || data.message || `HTTP ${response.status}`);
+            }
+
+            const text = await response.text();
+            return repararTextoMojibake(text || `HTTP ${response.status}`);
+        };
+
+        const construirPayloadPersistencia = () => filasCargadas.map(item => ({
+            codSucursal: item.codSucursal,
+            transaccionProyectada: item.transaccionProyectada
+        }));
+
+        const validarSucursalesCargadas = () => {
+            const invalidas = filasCargadas
+                .map(item => item.codSucursal)
+                .filter(cod => !validStoreCodes.includes(cod));
+
+            return [...new Set(invalidas)];
+        };
+
+        const validarExistentes = async () => {
+            const response = await fetch(`${window.location.pathname}?handler=ValidarExistentes`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": tokenAntiforgery()
+                },
+                body: JSON.stringify(construirPayloadPersistencia())
+            });
+
+            if (!response.ok) {
+                throw new Error(await obtenerMensajeError(response));
+            }
+
+            return await response.json();
+        };
+
+        const procesarArchivo = async () => {
+            const file = excelInput.files?.[0];
+            if (!file) {
+                mostrarMensaje("warning", "Debe seleccionar un archivo antes de leerlo.");
+                return;
+            }
+
+            limpiarInterfaz(false);
+            mostrarMensaje("info", "Validando archivo...", 0);
+
+            try {
+                const buffer = await file.arrayBuffer();
+                const workbook = XLSX.read(buffer, { type: "array" });
+                const firstSheetName = workbook.SheetNames[0];
+
+                if (!firstSheetName) {
+                    throw new Error("El archivo no contiene hojas.");
+                }
+
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+                    header: 1,
+                    raw: true,
+                    defval: ""
+                });
+
+                if (!rows.length) {
+                    throw new Error("El archivo no contiene datos.");
+                }
+
+                const headers = rows[0].map(normalizarCabecera);
+                const codSucursalIndex = headers.indexOf("codsucursal");
+                const transaccionIndex = headers.indexOf("transaccionproyectada");
+
+                if (codSucursalIndex === -1 || transaccionIndex === -1) {
+                    throw new Error("La plantilla debe incluir CodSucursal y TransaccionProyectada.");
+                }
+
+                const errores = [];
+                const registros = [];
+                const duplicados = new Set();
+
+                for (let index = 1; index < rows.length; index++) {
+                    const row = rows[index];
+                    const emptyRow = row.every(cell => String(cell ?? "").trim() === "");
+                    if (emptyRow) {
+                        errores.push(`Fila ${index + 1}: La fila está vacía.`);
+                        continue;
+                    }
+
+                    const codSucursal = String(row[codSucursalIndex] ?? "").trim().toUpperCase();
+                    if (!codSucursal) {
+                        errores.push(`Fila ${index + 1}: CodSucursal es obligatorio.`);
+                        continue;
+                    }
+
+                    const transaccionResult = parseTransaccionProyectada(row[transaccionIndex]);
+                    if (transaccionResult.error) {
+                        errores.push(`Fila ${index + 1}: TransaccionProyectada inválida; ${transaccionResult.error}`);
+                        continue;
+                    }
+
+                    if (duplicados.has(codSucursal)) {
+                        errores.push(`Fila ${index + 1}: CodSucursal duplicado (${codSucursal}).`);
+                        continue;
+                    }
+
+                    duplicados.add(codSucursal);
+                    registros.push({
+                        codSucursal,
+                        nombreSucursal: storeNameMap[codSucursal] || "",
+                        transaccionProyectada: transaccionResult.value
+                    });
+                }
+
+                if (!registros.length) {
+                    throw new Error("El archivo no contiene filas válidas para procesar.");
+                }
+
+                if (errores.length) {
+                    const primerError = errores[0];
+                    throw new Error(`Se detectaron ${errores.length} error(es) de formato. Primer detalle: ${primerError}`);
+                }
+
+                filasCargadas = registros;
+                renderPreview();
+                btnGuardar.disabled = false;
+                mostrarMensaje("success", "Archivo validado correctamente. Ya puede guardar la carga masiva.");
+            } catch (error) {
+                filasCargadas = [];
+                btnGuardar.disabled = true;
+                previewCard.classList.add("d-none");
+                previewCard.style.display = "none";
+                mostrarMensaje("danger", error.message || "Ocurrió un error al procesar el archivo.");
+            }
+        };
+
+        const guardarCarga = async () => {
+            if (!filasCargadas.length) {
+                mostrarMensaje("warning", "No hay filas válidas para guardar.");
+                return;
+            }
+
+            const sucursalesInvalidas = validarSucursalesCargadas();
+            if (sucursalesInvalidas.length > 0) {
+                mostrarMensaje("", "");
+                mostrarModalLista(
+                    "Sucursales no válidas",
+                    "Se encontraron sucursales no registradas en el sistema. Corrija el archivo antes de guardar.",
+                    sucursalesInvalidas
+                );
+                return;
+            }
+
+            try {
+                const existentes = await validarExistentes();
+                if (Array.isArray(existentes) && existentes.length > 0) {
+                    mostrarMensaje("", "");
+                    mostrarModalLista(
+                        "Registros ya guardados",
+                        `Ya existen registros guardados para una o más sucursales en ${monthLabel}.`,
+                        existentes.map(item => `${item.codSucursal} - ${String(item.mes).padStart(2, "0")}/${item.ano}`)
+                    );
+                    return;
+                }
+
+                btnGuardar.disabled = true;
+                mostrarMensaje("info", "Guardando carga masiva...", 0);
+
+                const response = await fetch(`${window.location.pathname}?handler=Guardar`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify({
+                        items: construirPayloadPersistencia()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeError(response));
+                }
+
+                const resultado = await response.json();
+                limpiarInterfaz(false);
+                mostrarMensaje("success", resultado.mensaje || "Carga masiva procesada correctamente.");
+            } catch (error) {
+                btnGuardar.disabled = false;
+                mostrarMensaje("danger", error.message || "No se pudo guardar la carga masiva.");
+            }
+        };
+
+        const descargarPlantilla = async () => {
+            const codSucursales = obtenerSucursalesSeleccionadas();
+            mostrarMensaje("info", "Descargando plantilla...", 0);
+
+            const response = await fetch(`${window.location.pathname}?handler=DescargarPlantilla`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": tokenAntiforgery()
+                },
+                body: JSON.stringify(codSucursales)
+            });
+
+            if (!response.ok) {
+                throw new Error(await obtenerMensajeError(response));
+            }
+
+            const data = await response.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                throw new Error("No se encontraron sucursales para los filtros seleccionados.");
+            }
+
+            const rows = [
+                ["CodSucursal", "TransaccionProyectada"],
+                ...data.map(item => [
+                    item.codSucursal || "",
+                    item.transaccionProyectada ?? ""
+                ])
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla");
+            XLSX.writeFile(workbook, `Plantilla_Transacciones_${monthLabel.replace(/\s+/g, "_")}.xlsx`);
+        };
+
+        document.getElementById("btnLeerArchivo")?.addEventListener("click", () => {
+            void procesarArchivo();
+        });
+
+        btnGuardar?.addEventListener("click", () => {
+            void guardarCarga();
+        });
+
+        document.getElementById("btnLimpiar")?.addEventListener("click", () => {
+            limpiarInterfaz();
+        });
+
+        btnDescargarPlantilla?.addEventListener("click", async () => {
+            try {
+                await descargarPlantilla();
+                mostrarMensaje("success", "Plantilla descargada correctamente.");
+            } catch (error) {
+                mostrarMensaje("danger", error.message || "No se pudo descargar la plantilla.");
+            }
+        });
+
+        storeFilterChecks.forEach(check => {
+            check.addEventListener("change", actualizarResumenSucursales);
+        });
+
+        actualizarResumenSucursales();
+    </script>
+}

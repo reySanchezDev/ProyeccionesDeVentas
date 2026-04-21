@@ -27,6 +27,8 @@
         var isConsultaTicketStaff = currentPath.EndsWith("/ConsultaTicketStaff", StringComparison.OrdinalIgnoreCase);
         var isSubirTicketSucursal = currentPath.EndsWith("/SubirTicketSucursal", StringComparison.OrdinalIgnoreCase);
         var isConsultaTicketSucursal = currentPath.EndsWith("/ConsultaTicketSucursal", StringComparison.OrdinalIgnoreCase);
+        var isSubirTransacciones = currentPath.EndsWith("/SubirTransacciones", StringComparison.OrdinalIgnoreCase);
+        var isConsultaTransacciones = currentPath.EndsWith("/ConsultaTransacciones", StringComparison.OrdinalIgnoreCase);
     }
 
     <div id="appContainer"
@@ -129,6 +131,38 @@
                                            aria-current="@(isConsultaTicketSucursal ? "page" : null)">
                                             <i class="bi bi-search"></i>
                                             <span>Consultar Tickets por Sucursal</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </section>
+
+                            <section class="sidebar-nav-group" data-nav-group data-group-key="proyeccion-transacciones" data-group-default-open="false">
+                                <button type="button"
+                                        class="sidebar-group-toggle"
+                                        id="grupo-transacciones"
+                                        data-nav-group-toggle
+                                        aria-expanded="true"
+                                        aria-controls="grupo-transacciones-opciones">
+                                    <span class="sidebar-group-title">Proyección de Transacciones</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <ul class="nav flex-column" id="grupo-transacciones-opciones" data-nav-group-panel>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isSubirTransacciones ? " is-active" : string.Empty)"
+                                           asp-page="/SubirTransacciones"
+                                           title="Subir transacciones"
+                                           aria-current="@(isSubirTransacciones ? "page" : null)">
+                                            <i class="bi bi-bar-chart-line"></i>
+                                            <span>Subir Transacciones</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link@(isConsultaTransacciones ? " is-active" : string.Empty)"
+                                           asp-page="/ConsultaTransacciones"
+                                           title="Consultar transacciones"
+                                           aria-current="@(isConsultaTransacciones ? "page" : null)">
+                                            <i class="bi bi-search"></i>
+                                            <span>Consultar Transacciones</span>
                                         </a>
                                     </li>
                                 </ul>

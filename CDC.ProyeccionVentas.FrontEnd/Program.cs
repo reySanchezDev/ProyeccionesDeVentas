@@ -18,6 +18,7 @@ var validarFechasUrl = config["Servicios:ProyeccionVentasAPI"];
 var consultaVentasUrl = config["Servicios:ProyeccionVentasConsultaAPI"];
 var ticketStaffUrl = config["Servicios:TicketStaffAPI"] ?? consultaVentasUrl;
 var ticketSucursalUrl = config["Servicios:TicketSucursalAPI"] ?? ticketStaffUrl;
+var transaccionSucursalUrl = config["Servicios:TransaccionSucursalAPI"] ?? ticketSucursalUrl;
 
 // -------------------  Validaciones básicas  -------------------------
 if (string.IsNullOrWhiteSpace(authApiUrl))
@@ -30,6 +31,8 @@ if (string.IsNullOrWhiteSpace(ticketStaffUrl))
     throw new InvalidOperationException("Falta la URL de TicketStaffAPI en appsettings.json (Servicios:TicketStaffAPI).");
 if (string.IsNullOrWhiteSpace(ticketSucursalUrl))
     throw new InvalidOperationException("Falta la URL de TicketSucursalAPI en appsettings.json (Servicios:TicketSucursalAPI).");
+if (string.IsNullOrWhiteSpace(transaccionSucursalUrl))
+    throw new InvalidOperationException("Falta la URL de TransaccionSucursalAPI en appsettings.json (Servicios:TransaccionSucursalAPI).");
 
 // -------------------  Servicios MVC/Razor  --------------------------
 builder.Services.AddRazorPages(options =>
@@ -65,6 +68,7 @@ builder.Services.AddHttpClient<IStoresHttpClient, StoresHttpClient>(c => c.BaseA
 builder.Services.AddHttpClient<ICalendarioHttpClient, CalendarioHttpClient>( c => c.BaseAddress = new Uri(validarFechasUrl));
 builder.Services.AddHttpClient<ITicketStaffHttpClient, TicketStaffHttpClient>(c => c.BaseAddress = new Uri(ticketStaffUrl));
 builder.Services.AddHttpClient<ITicketSucursalHttpClient, TicketSucursalHttpClient>(c => c.BaseAddress = new Uri(ticketSucursalUrl));
+builder.Services.AddHttpClient<ITransaccionSucursalHttpClient, TransaccionSucursalHttpClient>(c => c.BaseAddress = new Uri(transaccionSucursalUrl));
 
 var app = builder.Build();
 

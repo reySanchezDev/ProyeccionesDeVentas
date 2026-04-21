@@ -1,0 +1,845 @@
+@page
+@model ConsultaTransaccionesModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Consultar Transacciones";
+    ViewData["ShowSidebar"] = true;
+    ViewData["HtmlClass"] = "programacion-screen-page";
+    ViewData["BodyClass"] = "programacion-screen-page";
+    ViewData["AppContainerClass"] = "app-container-programacion-screen";
+    ViewData["MainContentClass"] = "main-content-area-programacion-screen";
+    ViewData["MainBodyClass"] = "main-body-programacion";
+    ViewData["PageFrameClass"] = "page-frame-programacion";
+    var totalResultados = Model.Resultados?.Count ?? 0;
+    var cultura = CultureInfo.GetCultureInfo("es-NI");
+    var initialMessageClass = string.IsNullOrWhiteSpace(Model.MensajeError)
+        ? "page-status-message screen-status upload-screen-status"
+        : "page-status-message screen-status upload-screen-status is-danger";
+}
+
+<div class="screen-shell consulta-proyecciones-shell ticket-staff-shell">
+    <section class="screen-card screen-card-header screen-card-header-compact consulta-proyecciones-header">
+        <div class="screen-title-row">
+            <h2 class="mb-0">@ViewData["Title"]</h2>
+            <span id="mensajeDinamico" class="@initialMessageClass" aria-live="polite">@Model.MensajeError</span>
+        </div>
+    </section>
+
+    <form method="post" class="row g-3 mb-4 screen-card screen-card-form" id="form-filtros">
+        @Html.AntiForgeryToken()
+        <div class="col-md-3">
+            <label class="form-label">Mes</label>
+            <select class="form-select" asp-for="Filtro.Mes">
+                @foreach (var mes in Model.MesesDisponibles)
+                {
+                    <option value="@mes.Valor">@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Año</label>
+            <select class="form-select" asp-for="Filtro.Ano">
+                @foreach (var anio in Model.AniosDisponibles)
+                {
+                    <option value="@anio">@anio</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Sucursal (opcional)</label>
+            <div class="dropdown w-100">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start store-filter-toggle"
+                        type="button"
+                        id="storeFilterDropdownButton"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside"
+                        aria-expanded="false">
+                    <span id="storeFilterSummary">@Model.ResumenSucursalesSeleccionadas</span>
+                </button>
+                <div class="dropdown-menu w-100 p-2 store-filter-menu" aria-labelledby="storeFilterDropdownButton">
+                    @foreach (var store in Model.StoresDisponibles)
+                    {
+                        var checkboxId = $"transaccion-sucursal-filter-{store.No}";
+                        <div class="form-check">
+                            <input class="form-check-input store-filter-check"
+                                   type="checkbox"
+                                   name="Filtro.CodSucursales"
+                                   value="@store.No"
+                                   id="@checkboxId"
+                                   @(Model.Filtro.CodSucursales.Contains(store.No) ? "checked" : null) />
+                            <label class="form-check-label" for="@checkboxId">@store.No - @store.StoreNo</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <section class="screen-card screen-card-actions">
+        <div class="consulta-toolbar-layout" id="botonera">
+            <div class="consulta-toolbar-head">
+                <div class="btn-group consulta-toolbar-actions">
+                    <button type="submit" class="btn btn-primary custom-btn-effect btn-buscar" form="form-filtros">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                    <button id="btnLimpiar" class="btn btn-outline-secondary custom-btn-effect btn-limpiar">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </button>
+                    <button id="btnRecargar" class="btn btn-outline-primary custom-btn-effect btn-recargar">
+                        <i class="bi bi-arrow-clockwise"></i> Recargar
+                    </button>
+                    <button id="btnEliminarMes" type="button" class="btn btn-outline-danger custom-btn-effect btn-eliminar-mes">
+                        <i class="bi bi-trash me-1"></i> Eliminar Mes
+                    </button>
+                </div>
+                <span class="badge bg-info text-dark fs-6 py-2 px-3 consulta-toolbar-badge">
+                    Filas: <span id="filasCount">@totalResultados</span>
+                </span>
+            </div>
+            <div class="consulta-toolbar-filter-row">
+                <div class="consulta-view-tools">
+                    <div class="consulta-view-filter">
+                        <label for="filtroVistaAvanzado" class="form-label mb-1">Filtro de vista avanzado</label>
+                        <div class="consulta-view-filter-box">
+                            <i class="bi bi-search"></i>
+                            <input id="filtroVistaAvanzado"
+                                   type="text"
+                                   class="form-control"
+                                   placeholder="Buscar por período, sucursal o transacción proyectada" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @if (Model.Resultados != null && Model.Resultados.Any())
+    {
+        <section class="screen-card screen-card-table">
+            <div class="table-responsive-scroll">
+                <table class="table table-bordered table-striped" id="tablaResultados">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="periodo" data-sort-type="monthyear">
+                                    <span>Período</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="codSucursal" data-sort-type="text">
+                                    <span>Código Sucursal</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="sucursal" data-sort-type="text">
+                                    <span>Sucursal</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="table-sort-button" data-sort-key="transaccionProyectada" data-sort-type="number">
+                                    <span>Transacción Proyectada</span>
+                                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Resultados)
+                        {
+                            <tr data-id="@item.Id">
+                                <td data-sort-value="@($"{item.Ano:D4}-{item.Mes:D2}")">@char.ToUpper(cultura.DateTimeFormat.GetMonthName(item.Mes)[0])@cultura.DateTimeFormat.GetMonthName(item.Mes).Substring(1) @item.Ano</td>
+                                <td>@item.CodSucursal</td>
+                                <td class="@(!item.ExisteEnCatalogo ? "table-warning" : string.Empty)">
+                                    <div>@item.NombreSucursal</div>
+                                    @if (!item.ExisteEnCatalogo)
+                                    {
+                                        <small class="text-danger fw-semibold">Revisar en catálogo de sucursales</small>
+                                    }
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control input-transaccion-proyectada"
+                                           data-field="transaccionProyectada"
+                                           inputmode="decimal"
+                                           autocomplete="off"
+                                           value="@item.TransaccionProyectada" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div id="sinCoincidenciasVista" class="alert alert-info text-center mt-3 d-none">
+                No hay coincidencias con el filtro de vista aplicado.
+            </div>
+        </section>
+    }
+    else if (Model.MostrarMensajeSinResultados)
+    {
+        <div class="alert alert-info text-center mt-4">
+            No se encontraron resultados para los filtros aplicados.
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="deleteMonthModal" tabindex="-1" aria-labelledby="deleteMonthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteMonthModalLabel">Eliminar Transacciones por Mes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="anioEliminar" class="form-label">Año</label>
+                    <select id="anioEliminar" class="form-select">
+                        <option value="">Seleccione un año</option>
+                        @foreach (var anio in Model.AniosEliminar)
+                        {
+                            if (anio == Model.Filtro.Ano)
+                            {
+                                <option value="@anio" selected>@anio</option>
+                            }
+                            else
+                            {
+                                <option value="@anio">@anio</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mesEliminar" class="form-label">Mes</label>
+                    <select id="mesEliminar" class="form-select">
+                        <option value="">Seleccione un mes</option>
+                        @foreach (var mes in Model.MesesEliminar)
+                        {
+                            if (mes.Valor == Model.Filtro.Mes)
+                            {
+                                <option value="@mes.Valor" selected>@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                            }
+                            else
+                            {
+                                <option value="@mes.Valor">@char.ToUpper(mes.Nombre[0])@mes.Nombre.Substring(1)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="alert alert-warning mb-0">
+                    Esta acción eliminará todos los registros guardados del mes seleccionado.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary custom-modal-btn" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger custom-modal-btn" id="btnSolicitarConfirmacionEliminar">
+                    <i class="bi bi-trash me-1"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-exclamation-octagon-fill text-danger fs-1 mb-3"></i>
+                <p id="textoConfirmacionEliminar">Se eliminarán todos los registros del mes seleccionado. ¿Desea continuar?</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary custom-btn-effect" data-bs-dismiss="modal" id="btnCancelarConfirmacionEliminar">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger custom-btn-effect" id="btnConfirmarEliminarFinal">
+                    <i class="bi bi-trash me-1"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let messageTimeoutId = null;
+        const rowSaveStates = new Map();
+        const tablaResultados = document.getElementById("tablaResultados");
+        const tablaResultadosBody = tablaResultados?.querySelector("tbody") ?? null;
+        const filtroVistaAvanzado = document.getElementById("filtroVistaAvanzado");
+        const sinCoincidenciasVista = document.getElementById("sinCoincidenciasVista");
+        const badgeFilas = document.getElementById("filasCount");
+        const guardarUrl = `${window.location.pathname}?handler=Guardar`;
+        const eliminarUrl = `${window.location.pathname}?handler=Eliminar`;
+        const deleteMonthModal = new bootstrap.Modal(document.getElementById("deleteMonthModal"));
+        const confirmDeleteModal = new bootstrap.Modal(document.getElementById("confirmDeleteModal"));
+        const sortState = {
+            key: "",
+            type: "text",
+            direction: "asc"
+        };
+        const nombresMeses = [
+            "",
+            "enero",
+            "febrero",
+            "marzo",
+            "abril",
+            "mayo",
+            "junio",
+            "julio",
+            "agosto",
+            "septiembre",
+            "octubre",
+            "noviembre",
+            "diciembre"
+        ];
+
+        const tokenAntiforgery = () => document.querySelector("input[name=__RequestVerificationToken]")?.value ?? "";
+        const repararTextoMojibake = (texto) => {
+            if (texto === null || texto === undefined) {
+                return "";
+            }
+
+            const valor = String(texto);
+            if (!/[ÃÂ]/.test(valor)) {
+                return valor;
+            }
+
+            try {
+                const reparado = new TextDecoder("utf-8").decode(Uint8Array.from(valor, caracter => caracter.charCodeAt(0)));
+                return reparado.includes("�") && !valor.includes("�") ? valor : reparado;
+            } catch {
+                return valor;
+            }
+        };
+
+        const limpiarTimeoutMensaje = () => {
+            if (messageTimeoutId) {
+                clearTimeout(messageTimeoutId);
+                messageTimeoutId = null;
+            }
+        };
+
+        const mostrarMensaje = (tipo, texto, duracion = 5000) => {
+            limpiarTimeoutMensaje();
+            const contenedor = document.getElementById("mensajeDinamico");
+
+            if (!texto) {
+                contenedor.textContent = "";
+                contenedor.className = "page-status-message screen-status upload-screen-status";
+                return;
+            }
+
+            contenedor.textContent = repararTextoMojibake(texto);
+            contenedor.className = `page-status-message screen-status upload-screen-status is-${tipo}`;
+
+            if (duracion > 0) {
+                messageTimeoutId = setTimeout(() => {
+                    contenedor.textContent = "";
+                    contenedor.className = "page-status-message screen-status upload-screen-status";
+                    messageTimeoutId = null;
+                }, duracion);
+            }
+        };
+
+        const normalizarTransaccion = (valor) => String(valor ?? "").trim().replace(",", ".");
+        const esValorTransaccionParcialValido = (valor) => /^\d*(\.\d{0,2})?$/.test(normalizarTransaccion(valor));
+        const formatearTransaccionProyectada = (valor) => Number(valor).toLocaleString("en-US", {
+            useGrouping: false,
+            maximumFractionDigits: 2
+        });
+
+        const construirValorEditado = (input, texto) => {
+            const inicio = input.selectionStart ?? input.value.length;
+            const fin = input.selectionEnd ?? input.value.length;
+            return `${input.value.slice(0, inicio)}${texto}${input.value.slice(fin)}`;
+        };
+
+        const obtenerTransaccionNormalizada = (input, emptyAsZero = false) => {
+            const valor = normalizarTransaccion(input.value);
+            if (!valor) {
+                return emptyAsZero ? "0" : "";
+            }
+
+            const numero = Number(valor);
+            if (!/^\d+(\.\d{0,2})?$/.test(valor) || !Number.isFinite(numero) || numero < 0) {
+                return "";
+            }
+
+            return formatearTransaccionProyectada(numero);
+        };
+
+        const validarTransaccionInput = (input) => {
+            const valor = normalizarTransaccion(input.value);
+            if (!valor) {
+                input.classList.remove("is-invalid");
+                return true;
+            }
+
+            const numero = Number(valor);
+            const esValido = /^\d+(\.\d{0,2})?$/.test(valor) && Number.isFinite(numero) && numero >= 0;
+            input.classList.toggle("is-invalid", !esValido);
+            return esValido;
+        };
+
+        const obtenerEstadoFila = (rowId) => {
+            if (!rowSaveStates.has(rowId)) {
+                rowSaveStates.set(rowId, {
+                    saving: false,
+                    queued: null
+                });
+            }
+
+            return rowSaveStates.get(rowId);
+        };
+
+        const obtenerMensajeErrorDesdeResponse = async (response) => {
+            const contentType = response.headers.get("content-type") || "";
+            const errorMessage = `HTTP ${response.status}`;
+
+            if (contentType.includes("application/json")) {
+                const errorData = await response.json();
+                return repararTextoMojibake(errorData.error || errorData.mensaje || errorData.message || errorMessage);
+            }
+
+            const errorText = await response.text();
+            const errorTextPlano = errorText.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            return repararTextoMojibake(errorTextPlano || errorMessage);
+        };
+
+        const normalizarTextoBusqueda = (valor) => (valor || "")
+            .toString()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+
+        const obtenerFilasTabla = () => Array.from(tablaResultadosBody?.querySelectorAll("tr") ?? []);
+
+        const obtenerTextoFila = (fila) => {
+            const celdas = fila.querySelectorAll("td");
+            const periodo = celdas[0]?.innerText?.trim() ?? "";
+            const codSucursal = celdas[1]?.innerText?.trim() ?? "";
+            const sucursal = celdas[2]?.querySelector("div")?.innerText?.trim() ?? celdas[2]?.innerText?.trim() ?? "";
+            const advertencia = celdas[2]?.querySelector("small")?.innerText?.trim() ?? "";
+            const transaccion = celdas[3]?.querySelector("input")?.value?.trim() ?? "";
+            return normalizarTextoBusqueda(`${periodo} ${codSucursal} ${sucursal} ${advertencia} ${transaccion}`);
+        };
+
+        const obtenerValorOrden = (fila, key) => {
+            const celdas = fila.querySelectorAll("td");
+            switch (key) {
+                case "periodo":
+                    return celdas[0]?.dataset.sortValue ?? "";
+                case "codSucursal":
+                    return celdas[1]?.innerText?.trim() ?? "";
+                case "sucursal":
+                    return celdas[2]?.querySelector("div")?.innerText?.trim() ?? celdas[2]?.innerText?.trim() ?? "";
+                case "transaccionProyectada":
+                    return celdas[3]?.querySelector("input")?.value?.trim() ?? "0";
+                default:
+                    return "";
+            }
+        };
+
+        const compararValores = (valorA, valorB, type) => {
+            if (type === "number") {
+                return Number(normalizarTransaccion(valorA || 0)) - Number(normalizarTransaccion(valorB || 0));
+            }
+
+            if (type === "monthyear") {
+                return String(valorA || "").localeCompare(String(valorB || ""), "es", {
+                    sensitivity: "base",
+                    numeric: true
+                });
+            }
+
+            return String(valorA || "").localeCompare(String(valorB || ""), "es", {
+                sensitivity: "base",
+                numeric: true
+            });
+        };
+
+        const actualizarIndicadoresOrden = () => {
+            document.querySelectorAll(".table-sort-button").forEach(button => {
+                const indicator = button.querySelector(".sort-indicator");
+                const isActive = button.dataset.sortKey === sortState.key;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-sort", isActive ? (sortState.direction === "asc" ? "ascending" : "descending") : "none");
+
+                if (!indicator) {
+                    return;
+                }
+
+                indicator.textContent = !isActive ? "↕" : sortState.direction === "asc" ? "↑" : "↓";
+            });
+        };
+
+        const actualizarResumenVista = () => {
+            const filas = obtenerFilasTabla();
+            const visibles = filas.filter(fila => !fila.hidden);
+            if (badgeFilas) {
+                badgeFilas.textContent = String(visibles.length);
+            }
+
+            if (sinCoincidenciasVista) {
+                sinCoincidenciasVista.classList.toggle("d-none", visibles.length > 0);
+            }
+        };
+
+        const aplicarFiltroVista = () => {
+            const consulta = normalizarTextoBusqueda(filtroVistaAvanzado?.value ?? "");
+            const terminos = consulta.split(/\s+/).filter(Boolean);
+
+            obtenerFilasTabla().forEach(fila => {
+                const textoFila = obtenerTextoFila(fila);
+                fila.hidden = terminos.length > 0 && !terminos.every(termino => textoFila.includes(termino));
+            });
+        };
+
+        const aplicarOrdenActual = () => {
+            if (!tablaResultadosBody || !sortState.key) {
+                actualizarIndicadoresOrden();
+                return;
+            }
+
+            const filasOrdenadas = obtenerFilasTabla().sort((filaA, filaB) => {
+                const valorA = obtenerValorOrden(filaA, sortState.key);
+                const valorB = obtenerValorOrden(filaB, sortState.key);
+                const resultado = compararValores(valorA, valorB, sortState.type);
+                return sortState.direction === "asc" ? resultado : -resultado;
+            });
+
+            filasOrdenadas.forEach(fila => tablaResultadosBody.appendChild(fila));
+            actualizarIndicadoresOrden();
+        };
+
+        const aplicarVistaTabla = () => {
+            aplicarFiltroVista();
+            aplicarOrdenActual();
+            actualizarResumenVista();
+        };
+
+        const restaurarValorOriginal = (input) => {
+            const valorOriginal = input.dataset.originalValue || "0";
+            input.value = valorOriginal;
+            input.classList.remove("is-invalid");
+        };
+
+        const manejarKeydownEditable = (event, input) => {
+            if (event.ctrlKey || event.metaKey || event.altKey) {
+                return;
+            }
+
+            const teclasPermitidas = new Set([
+                "Backspace",
+                "Delete",
+                "Tab",
+                "Enter",
+                "Escape",
+                "ArrowLeft",
+                "ArrowRight",
+                "ArrowUp",
+                "ArrowDown",
+                "Home",
+                "End"
+            ]);
+
+            if (teclasPermitidas.has(event.key) || event.key.length !== 1) {
+                return;
+            }
+
+            const siguienteValor = construirValorEditado(input, event.key);
+            if (!esValorTransaccionParcialValido(siguienteValor)) {
+                event.preventDefault();
+            }
+        };
+
+        const manejarPasteEditable = (event, input) => {
+            const textoPegado = event.clipboardData?.getData("text") ?? "";
+            const siguienteValor = construirValorEditado(input, textoPegado);
+            if (!esValorTransaccionParcialValido(siguienteValor)) {
+                event.preventDefault();
+            }
+        };
+
+        const construirPayloadRegistro = (fila) => {
+            const rowId = Number(fila.dataset.id);
+            const transaccionInput = fila.querySelector('[data-field="transaccionProyectada"]');
+
+            if (!Number.isInteger(rowId) || !transaccionInput || !validarTransaccionInput(transaccionInput)) {
+                return null;
+            }
+
+            return {
+                id: rowId,
+                transaccionProyectada: Number(obtenerTransaccionNormalizada(transaccionInput, true))
+            };
+        };
+
+        const guardarRegistro = async (fila, payload) => {
+            const estadoFila = obtenerEstadoFila(payload.id);
+            estadoFila.saving = true;
+            fila.dataset.saving = "true";
+            mostrarMensaje("info", "Modificando...", 0);
+
+            try {
+                const response = await fetch(guardarUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeErrorDesdeResponse(response));
+                }
+
+                const resultado = await response.json();
+                const transaccionInput = fila.querySelector('[data-field="transaccionProyectada"]');
+                const transaccionProyectada = formatearTransaccionProyectada(resultado.transaccionProyectada);
+                transaccionInput.value = transaccionProyectada;
+                transaccionInput.dataset.originalValue = transaccionProyectada;
+                transaccionInput.classList.remove("is-invalid");
+                aplicarVistaTabla();
+                mostrarMensaje("success", resultado.mensaje || "Transacción proyectada actualizada correctamente.", 1800);
+            } catch (error) {
+                const transaccionInput = fila.querySelector('[data-field="transaccionProyectada"]');
+                restaurarValorOriginal(transaccionInput);
+                aplicarVistaTabla();
+                mostrarMensaje("danger", `Ocurrió un error al guardar los cambios: ${error.message}`);
+            } finally {
+                estadoFila.saving = false;
+                fila.dataset.saving = "false";
+
+                if (estadoFila.queued) {
+                    const queued = estadoFila.queued;
+                    estadoFila.queued = null;
+                    await guardarRegistro(fila, queued);
+                }
+            }
+        };
+
+        const encolarGuardado = (fila, payload) => {
+            const estadoFila = obtenerEstadoFila(payload.id);
+            if (estadoFila.saving) {
+                estadoFila.queued = payload;
+                return;
+            }
+
+            void guardarRegistro(fila, payload);
+        };
+
+        const solicitarGuardadoFila = (fila) => {
+            const payload = construirPayloadRegistro(fila);
+            if (!payload) {
+                const transaccionInput = fila.querySelector('[data-field="transaccionProyectada"]');
+                restaurarValorOriginal(transaccionInput);
+                aplicarVistaTabla();
+                mostrarMensaje("danger", "La transacción proyectada debe ser un número mayor o igual a cero con hasta 2 decimales.");
+                return;
+            }
+
+            const transaccionInput = fila.querySelector('[data-field="transaccionProyectada"]');
+            const valorActual = String(payload.transaccionProyectada);
+            const valorOriginal = transaccionInput.dataset.originalValue || "0";
+            transaccionInput.value = valorActual;
+
+            if (valorActual === valorOriginal) {
+                transaccionInput.classList.remove("is-invalid");
+                aplicarVistaTabla();
+                return;
+            }
+
+            encolarGuardado(fila, payload);
+        };
+
+        const limpiarFiltros = () => {
+            const form = document.getElementById("form-filtros");
+            if (!form) {
+                return;
+            }
+
+            const mesSelect = form.querySelector('[name="Filtro.Mes"]');
+            const anoSelect = form.querySelector('[name="Filtro.Ano"]');
+
+            if (mesSelect) {
+                mesSelect.value = String(new Date().getMonth() + 1);
+            }
+
+            if (anoSelect) {
+                anoSelect.value = String(new Date().getFullYear());
+            }
+
+            document.querySelectorAll('.store-filter-check').forEach(check => {
+                check.checked = false;
+            });
+
+            actualizarResumenSucursales();
+            form.submit();
+        };
+
+        const recargarPagina = () => {
+            const form = document.getElementById("form-filtros");
+            if (form) {
+                form.submit();
+            } else {
+                window.location.reload();
+            }
+        };
+
+        const actualizarResumenSucursales = () => {
+            const seleccionadas = Array.from(document.querySelectorAll('.store-filter-check:checked'))
+                .map(check => check.value.trim())
+                .filter(Boolean);
+
+            const resumen = document.getElementById("storeFilterSummary");
+            if (!resumen) {
+                return;
+            }
+
+            if (seleccionadas.length === 0) {
+                resumen.textContent = "Todas las sucursales";
+                return;
+            }
+
+            if (seleccionadas.length <= 2) {
+                resumen.textContent = seleccionadas.join(", ");
+                return;
+            }
+
+            resumen.textContent = `${seleccionadas.length} sucursales seleccionadas`;
+        };
+
+        const getPeriodoTexto = (mes, ano) => `${nombresMeses[mes] ?? "mes"} ${ano}`;
+
+        const abrirModalEliminarMes = () => {
+            deleteMonthModal.show();
+        };
+
+        const abrirConfirmacionEliminar = () => {
+            const mes = Number(document.getElementById("mesEliminar")?.value || 0);
+            const ano = Number(document.getElementById("anioEliminar")?.value || 0);
+
+            if (mes < 1 || mes > 12 || ano < 2000) {
+                mostrarMensaje("danger", "Debe seleccionar un mes y un año válidos.");
+                return;
+            }
+
+            const texto = document.getElementById("textoConfirmacionEliminar");
+            texto.textContent = `Se eliminarán todos los registros guardados de ${getPeriodoTexto(mes, ano)}. ¿Desea continuar?`;
+            deleteMonthModal.hide();
+            confirmDeleteModal.show();
+        };
+
+        const eliminarMes = async () => {
+            const mes = Number(document.getElementById("mesEliminar")?.value || 0);
+            const ano = Number(document.getElementById("anioEliminar")?.value || 0);
+
+            if (mes < 1 || mes > 12 || ano < 2000) {
+                mostrarMensaje("danger", "Debe seleccionar un mes y un año válidos.");
+                return;
+            }
+
+            try {
+                const response = await fetch(eliminarUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": tokenAntiforgery()
+                    },
+                    body: JSON.stringify({ mes, ano })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await obtenerMensajeErrorDesdeResponse(response));
+                }
+
+                const resultado = await response.json();
+                confirmDeleteModal.hide();
+                mostrarMensaje("success", resultado.mensaje || "Registros eliminados correctamente.");
+                setTimeout(() => recargarPagina(), 800);
+            } catch (error) {
+                mostrarMensaje("danger", `Ocurrió un error al eliminar el mes: ${error.message}`);
+            }
+        };
+
+        document.querySelectorAll('.store-filter-check').forEach(check => {
+            check.addEventListener("change", actualizarResumenSucursales);
+        });
+
+        document.getElementById("btnLimpiar")?.addEventListener("click", (event) => {
+            event.preventDefault();
+            limpiarFiltros();
+        });
+
+        document.getElementById("btnRecargar")?.addEventListener("click", (event) => {
+            event.preventDefault();
+            recargarPagina();
+        });
+
+        document.getElementById("btnEliminarMes")?.addEventListener("click", abrirModalEliminarMes);
+        document.getElementById("btnSolicitarConfirmacionEliminar")?.addEventListener("click", abrirConfirmacionEliminar);
+        document.getElementById("btnConfirmarEliminarFinal")?.addEventListener("click", eliminarMes);
+
+        document.querySelectorAll(".input-transaccion-proyectada").forEach(input => {
+            const valorOriginal = obtenerTransaccionNormalizada(input, true);
+            input.dataset.originalValue = valorOriginal;
+            input.value = valorOriginal;
+
+            input.addEventListener("keydown", event => manejarKeydownEditable(event, input));
+            input.addEventListener("paste", event => manejarPasteEditable(event, input));
+            input.addEventListener("input", () => {
+                validarTransaccionInput(input);
+                aplicarVistaTabla();
+            });
+            input.addEventListener("blur", () => {
+                const fila = input.closest("tr");
+                if (fila) {
+                    solicitarGuardadoFila(fila);
+                }
+            });
+            input.addEventListener("keydown", event => {
+                if (event.key !== "Enter") {
+                    return;
+                }
+
+                event.preventDefault();
+                input.blur();
+            });
+        });
+
+        document.querySelectorAll(".table-sort-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const key = button.dataset.sortKey || "";
+                const type = button.dataset.sortType || "text";
+                if (!key) {
+                    return;
+                }
+
+                if (sortState.key === key) {
+                    sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+                } else {
+                    sortState.key = key;
+                    sortState.type = type;
+                    sortState.direction = "asc";
+                }
+
+                aplicarVistaTabla();
+            });
+        });
+
+        filtroVistaAvanzado?.addEventListener("input", aplicarVistaTabla);
+
+        actualizarResumenSucursales();
+        aplicarVistaTabla();
+    </script>
+}
